@@ -1,0 +1,60 @@
+# --- PYTHON (Back-end) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- ENTORNOS VIRTUALES ---
+venv/
+.venv/
+env/
+bin/
+include/
+share/
+pyvenv.cfg
+
+# --- CONFIGURACIÓN Y SECRETOS (¡MUY IMPORTANTE!) ---
+# Aquí se protegen tus credenciales de Supabase
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+
+# --- BASES DE DATOS ---
+# Aunque usas Supabase (Nube), esto evita subir archivos locales si haces pruebas
+*.sqlite3
+*.db
+.supabase/
+supabase/.temp/
+
+# --- EDITORES DE CÓDIGO ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- SISTEMA OPERATIVO ---
+Thumbs.db
+desktop.ini
+.DS_Store
