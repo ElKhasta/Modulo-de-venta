@@ -28,7 +28,23 @@ class DetalleVenta(models.Model):
     producto=models.ForeignKey(Producto, on_delete=models.PROTECT)
     cantidad=models.IntegerField()
     precio_historico=models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def clean(self):
+        if self.pk:
+            anterior = DetalleVenta.objects.get(pk=self.pk)
+            diferencia = self.cantidad - anterior.cantidad
+        else:
+            diferencia = self.cantidad
+
+        if self.producto.stock < diferencia:
+            raise ValidationError(
+                f"No hay suficiente stock de {self.producto.nombre}. "
+                f"Solo quedan {self.producto.stock} piezas."
+            )
+
     def save(self, *args, **kwargs):
+        self.full_clean()
+        
         if self.pk:
             anterior = DetalleVenta.objects.get(pk=self.pk)
             diferencia = self.cantidad - anterior.cantidad

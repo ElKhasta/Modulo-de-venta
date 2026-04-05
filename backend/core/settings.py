@@ -57,5 +57,3 @@ SECRET_KEY = 'django-insecure-clave-temporal-de-ventas-2026-xyz'
 ALLOWED_HOSTS = ['*']
 WSGI_APPLICATION = 'core.wsgi.application'
 
-
-
