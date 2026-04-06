@@ -1,2 +1,22 @@
-# Modulo-de-venta
-Aplicación desarrollada con un propósito práctico usando Python, usando Supabase para la base de datos y Flet (Python) para el desarrollo de una aplicación, haciendo registro de inventarios, emisión de facturas con api de wpp oficial, registro de ventas, login de usarios y superusario
+# Módulo de Venta
+
+Sistema básico de ventas desarrollado con Django.
+
+## Funcionalidades
+
+- Gestión de productos
+- Gestión de clientes
+- Registro de ventas
+- Panel administrativo
+
+## Requisitos
+
+- Python 3.10 o superior
+- Git
+- Git Bash en Windows
+
+## Clonar el repositorio
+
+```bash
+git clone https://github.com/ElKhasta/Modulo-de-venta.git
+cd Modulo-de-venta/backend
