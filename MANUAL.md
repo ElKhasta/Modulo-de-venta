@@ -25,7 +25,7 @@ admin12345
 
 ##5. Forma manual (alternativa)
 python -m venv venv
-source venv/Scripts/activate
+source venv/bit/activate
 
 pip install -r requirements.txt
 
