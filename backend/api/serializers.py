@@ -1,13 +1,17 @@
 from rest_framework import serializers
-from .models import Producto, Venta, DetalleVenta
+from .models import Producto, Venta, DetalleVenta, Cliente # <--- Añadimos Cliente
+
+class ClienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cliente
+        fields = '__all__' # Exponemos todos los campos del cliente (ID, nombre, RFC, etc.)
 
 class ProductoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Producto
-        fields = '__all__' # Exponemos ID, nombre, stock y precio
+        fields = '__all__' 
 
 class DetalleVentaSerializer(serializers.ModelSerializer):
-    # Agregamos el nombre del producto para que el Front no vea solo un ID numérico
     producto_nombre = serializers.ReadOnlyField(source='producto.nombre')
 
     class Meta:
@@ -15,10 +19,15 @@ class DetalleVentaSerializer(serializers.ModelSerializer):
         fields = ['id', 'producto', 'producto_nombre', 'cantidad', 'precio_historico', 'subtotal']
 
 class VentaSerializer(serializers.ModelSerializer):
-    # Esto anida los detalles dentro de la venta (Relación Maestro-Detalle)
+    # Anidamos los detalles
     detalles = DetalleVentaSerializer(many=True, read_only=True)
+    
+    # Nuevo: Agregamos información del cliente a la respuesta de la venta
+    # Usamos StringRelatedField para ver el nombre o el ID directamente
+    cliente_nombre = serializers.ReadOnlyField(source='cliente.nombre')
 
     class Meta:
         model = Venta
-        fields = ['id', 'fecha', 'total', 'detalles']
+        # Añadimos 'cliente' (ID) y 'cliente_nombre' (texto) a los campos
+        fields = ['id', 'fecha', 'total', 'cliente', 'cliente_nombre', 'detalles']
         

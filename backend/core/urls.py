@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from api.views import ProductoViewSet, VentaViewSet
+from api.views import ProductoViewSet, VentaViewSet, login_view 
 
 router = DefaultRouter()
 router.register(r'productos', ProductoViewSet)
@@ -25,5 +25,7 @@ router.register(r'ventas', VentaViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # AGREGAMOS ESTA LÍNEA (El orden importa, ponla antes o después del router)
+    path('api/login/', login_view, name='login'),
     path('api/', include(router.urls)),
 ]
