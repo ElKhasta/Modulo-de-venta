@@ -1,0 +1,8 @@
+﻿Django>=5.2,<6.1
+djangorestframework>=3.15,<4.0
+djangorestframework-simplejwt>=5.4,<6.0
+django-cors-headers>=4.6,<5.0
+python-dotenv>=1.0,<2.0
+requests>=2.32,<3.0
+flet>=0.28,<1.0
+psycopg[binary]>=3.2,<4.0

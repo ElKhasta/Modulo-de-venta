@@ -1,4 +1,4 @@
-# --- PYTHON (Back-end) ---
+﻿# --- PYTHON (Back-end) ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -30,8 +30,7 @@ include/
 share/
 pyvenv.cfg
 
-# --- CONFIGURACIÓN Y SECRETOS (¡MUY IMPORTANTE!) ---
-# Aquí se protegen tus credenciales de Supabase
+# --- CONFIGURACION Y SECRETOS ---
 .env
 .env.local
 .env.development.local
@@ -42,13 +41,19 @@ pyvenv.cfg
 *.cert
 
 # --- BASES DE DATOS ---
-# Aunque usas Supabase (Nube), esto evita subir archivos locales si haces pruebas
 *.sqlite3
 *.db
 .supabase/
 supabase/.temp/
+staticfiles/
 
-# --- EDITORES DE CÓDIGO ---
+# --- CACHE Y LOGS ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.log
+
+# --- EDITORES DE CODIGO ---
 .vscode/
 .idea/
 *.swp
@@ -58,3 +63,5 @@ supabase/.temp/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+.packages/
