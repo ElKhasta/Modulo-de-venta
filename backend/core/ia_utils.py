@@ -1,9 +1,16 @@
 import json
 import urllib.request
 
-def obtener_recomendacion_vania(producto_nombre):
+def obtener_recomendaciones_multiples(producto_nombre):
     url = "http://localhost:11434/api/generate"
-    prompt = f"Eres un experto chef de VANTTI. Sugiere un maridaje y una receta de 3 pasos para: {producto_nombre}. Responde en español."
+    
+    # Prompt mejorado para pedir 3 opciones
+    prompt = (
+        f"Eres el chef ejecutivo de VANTTI. El cliente tiene: {producto_nombre}. "
+        "Proporciona 3 opciones de recetas diferentes y creativas. "
+        "Para cada opción incluye: 1. Nombre del platillo, 2. Ingredientes clave, 3. Un maridaje sugerido. "
+        "Responde en español de forma estructurada y breve."
+    )
     
     data = json.dumps({
         "model": "vanIA",
@@ -11,13 +18,12 @@ def obtener_recomendacion_vania(producto_nombre):
         "stream": False
     }).encode('utf-8')
     
-    # Esta es la forma correcta para la PowerShell y Python:
     headers = {'Content-Type': 'application/json'}
     
     try:
         req = urllib.request.Request(url, data=data, headers=headers)
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=40) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            return res_data.get('response', "vanIA está procesando...")
+            return res_data.get('response', "vanIA no pudo generar las opciones.")
     except Exception as e:
-        return f"Error de conexión: Asegúrate de que Ollama esté abierto. ({str(e)})"
+        return f"Error de conexión con vanIA: {str(e)}"
