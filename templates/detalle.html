@@ -1,0 +1,13 @@
+<div class="card">
+    <h2>{{ producto.nombre }}</h2>
+    <p>{{ producto.descripcion }}</p>
+    <p>Precio: ${{ producto.precio }}</p>
+</div>
+
+<div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-top: 20px;">
+    <h3>✨ Recomendación de vanIA</h3>
+    <p><i>"Basado en tu compra de hoy..."</i></p>
+    <div id="recomendacion-texto">
+        {{ sugerencia|linebreaks }}
+    </div>
+</div>

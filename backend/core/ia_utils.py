@@ -3,25 +3,22 @@ import urllib.request
 
 def obtener_recomendacion_vania(producto_nombre):
     url = "http://localhost:11434/api/generate"
-    prompt = f"Eres un experto chef de VANTTI. El cliente compró {producto_nombre}. Sugiere un maridaje corto y una receta de 3 pasos. Responde en español."
+    prompt = f"Eres un experto chef de VANTTI. Sugiere un maridaje y una receta de 3 pasos para: {producto_nombre}. Responde en español de forma breve."
     
-    data = {
+    data = json.dumps({
         "model": "vanIA",
         "prompt": prompt,
         "stream": False
-    }
+    }).encode('utf-8')
     
-    # Aquí está la corrección: Usamos 'headers' en lugar de 'content_type' directo
+    # Usamos un diccionario de headers estándar
     headers = {'Content-Type': 'application/json'}
     
     try:
-        req = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode('utf-8'), 
-            headers=headers
-        )
-        with urllib.request.urlopen(req) as response:
+        # Enviamos la petición con un tiempo de espera (timeout) de 30 segundos
+        req = urllib.request.Request(url, data=data, headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            return res_data.get('response', "vanIA está procesando...")
+            return res_data.get('response', "vanIA no encontró una respuesta.")
     except Exception as e:
-        return f"Error al conectar con vanIA: {str(e)}"
+        return f"Error de conexión: Asegúrate de que Ollama esté abierto. ({str(e)})"
