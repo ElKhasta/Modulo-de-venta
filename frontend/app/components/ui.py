@@ -19,13 +19,52 @@ def money(value) -> str:
 
 
 def show_message(page: ft.Page, message: str, *, error: bool = False) -> None:
-    page.snack_bar = ft.SnackBar(
-        content=ft.Text(message, color=ft.Colors.WHITE),
-        bgcolor=ERROR if error else SUCCESS,
-        duration=3500,
-    )
-    page.snack_bar.open = True
+    snack_bar = getattr(page, "_vantti_snack_bar", None)
+    if snack_bar is None:
+        snack_bar = ft.SnackBar(
+            content=ft.Text(message, color=ft.Colors.WHITE),
+            bgcolor=ERROR if error else SUCCESS,
+            duration=3500,
+        )
+        page.overlay.append(snack_bar)
+        page._vantti_snack_bar = snack_bar
+    else:
+        snack_bar.content = ft.Text(message, color=ft.Colors.WHITE)
+        snack_bar.bgcolor = ERROR if error else SUCCESS
+        snack_bar.duration = 3500
+
+    snack_bar.open = True
     page.update()
+
+
+def open_dialog(page: ft.Page, dialog: ft.AlertDialog) -> None:
+    if hasattr(page, "show_dialog"):
+        page.show_dialog(dialog)
+        return
+
+    def cleanup(_=None):
+        if dialog in page.overlay:
+            page.overlay.remove(dialog)
+            page.update()
+
+    dialog.on_dismiss = cleanup
+    if dialog not in page.overlay:
+        page.overlay.append(dialog)
+    dialog.open = True
+    page.update()
+
+
+def close_dialog(page: ft.Page, dialog: ft.AlertDialog) -> None:
+    if hasattr(page, "pop_dialog"):
+        page.pop_dialog()
+        page.update()
+        return
+
+    dialog.open = False
+    page.update()
+    if dialog in page.overlay:
+        page.overlay.remove(dialog)
+        page.update()
 
 
 def app_card(content, *, expand: bool = False, padding: int = 20, height=None):
@@ -62,6 +101,10 @@ def primary_button(text: str, on_click, *, icon=None, expand: bool = False, disa
         ),
         expand=expand,
     )
+
+
+def set_button_label(button, text: str) -> None:
+    button.content = text
 
 
 def secondary_button(text: str, on_click, *, icon=None, expand: bool = False):

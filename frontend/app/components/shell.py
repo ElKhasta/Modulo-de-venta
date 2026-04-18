@@ -95,11 +95,33 @@ def build_shell_view(page: ft.Page, state, route: str, content):
         border=ft.border.only(bottom=ft.BorderSide(1, BORDER)),
     )
 
+    content_wrapper = ft.Container(
+        content=content,
+        padding=28,
+        width=1180,
+    )
+
+    scrollable_content = ft.Column(
+        [
+            ft.Row(
+                [content_wrapper],
+                scroll=ft.ScrollMode.ALWAYS,
+                expand=True,
+            )
+        ],
+        scroll=ft.ScrollMode.ALWAYS,
+        expand=True,
+    )
+
     body = ft.Row(
         [
             rail,
             ft.VerticalDivider(width=1, color=BORDER),
-            ft.Container(content=ft.Container(content=content, padding=28, expand=True), bgcolor=BACKGROUND, expand=True),
+            ft.Container(
+                content=scrollable_content,
+                bgcolor=BACKGROUND,
+                expand=True,
+            ),
         ],
         spacing=0,
         expand=True,

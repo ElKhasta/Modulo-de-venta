@@ -1,6 +1,6 @@
 ﻿import flet as ft
 
-from app.components.ui import app_card, empty_state, field, money, page_header, primary_button, secondary_button, show_message, status_pill
+from app.components.ui import app_card, close_dialog, empty_state, field, money, open_dialog, page_header, primary_button, secondary_button, show_message, status_pill
 from app.services.api import AuthenticationError, ApiError
 from app.theme import ERROR, NAVY, TEXT, TEXT_SOFT
 
@@ -8,7 +8,7 @@ from app.theme import ERROR, NAVY, TEXT, TEXT_SOFT
 def build_productos_view(page: ft.Page, state):
     productos = []
     search_input = field("Buscar por nombre o codigo", expand=True)
-    content_column = ft.Column(spacing=12)
+    content_column = ft.Column(spacing=12, scroll=ft.ScrollMode.ALWAYS)
 
     def handle_auth_error(exc: Exception):
         state.logout()
@@ -61,10 +61,6 @@ def build_productos_view(page: ft.Page, state):
             content_column.controls = [empty_state("No fue posible cargar productos", str(exc))]
             page.update()
 
-    def close_dialog(dialog):
-        dialog.open = False
-        page.update()
-
     def open_form(product=None):
         nombre = field("Nombre", value=product["nombre"] if product else "")
         codigo = field("Codigo de barras", value=product["codigo_barras"] if product else "")
@@ -72,61 +68,72 @@ def build_productos_view(page: ft.Page, state):
         stock = field("Stock", value=str(product["stock"]) if product else "0")
 
         def save(_):
-            payload = {
-                "nombre": (nombre.value or "").strip(),
-                "codigo_barras": (codigo.value or "").strip(),
-                "precio": (precio.value or "").strip(),
-                "stock": int(stock.value or 0),
-            }
             try:
+                nombre_value = (nombre.value or "").strip()
+                codigo_value = (codigo.value or "").strip()
+                precio_value = float((precio.value or "0").strip())
+                stock_value = int((stock.value or "0").strip())
+
+                if not nombre_value or not codigo_value:
+                    raise ValueError("Captura nombre y codigo de barras.")
+                if precio_value <= 0:
+                    raise ValueError("El precio debe ser mayor a cero.")
+                if stock_value < 0:
+                    raise ValueError("El stock no puede ser negativo.")
+
+                payload = {
+                    "nombre": nombre_value,
+                    "codigo_barras": codigo_value,
+                    "precio": f"{precio_value:.2f}",
+                    "stock": stock_value,
+                }
+
                 if product:
                     state.api.put(f"productos/{product['id']}/", json=payload)
                     show_message(page, "Producto actualizado correctamente.")
                 else:
                     state.api.post("productos/", json=payload)
                     show_message(page, "Producto creado correctamente.")
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 load_data()
             except AuthenticationError as exc:
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 handle_auth_error(exc)
             except Exception as exc:
                 show_message(page, str(exc), error=True)
 
         dialog = ft.AlertDialog(
             modal=True,
+            scrollable=True,
             title=ft.Text("Editar producto" if product else "Nuevo producto"),
             content=ft.Container(width=420, content=ft.Column([nombre, codigo, precio, stock], spacing=14, tight=True)),
-            actions=[secondary_button("Cancelar", lambda e: close_dialog(dialog)), primary_button("Guardar", save)],
+            actions=[secondary_button("Cancelar", lambda e: close_dialog(page, dialog)), primary_button("Guardar", save)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        page.dialog = dialog
-        dialog.open = True
-        page.update()
+        open_dialog(page, dialog)
 
     def confirm_delete(product):
         def remove(_):
             try:
                 state.api.delete(f"productos/{product['id']}/")
                 show_message(page, "Producto eliminado correctamente.")
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 load_data()
             except AuthenticationError as exc:
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 handle_auth_error(exc)
             except Exception as exc:
                 show_message(page, str(exc), error=True)
 
         dialog = ft.AlertDialog(
             modal=True,
+            scrollable=True,
             title=ft.Text("Eliminar producto"),
             content=ft.Text(f"Se eliminara '{product['nombre']}'. Esta accion no se puede deshacer."),
-            actions=[secondary_button("Cancelar", lambda e: close_dialog(dialog)), primary_button("Eliminar", remove, icon=ft.Icons.DELETE_ROUNDED)],
+            actions=[secondary_button("Cancelar", lambda e: close_dialog(page, dialog)), primary_button("Eliminar", remove, icon=ft.Icons.DELETE_ROUNDED)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        page.dialog = dialog
-        dialog.open = True
-        page.update()
+        open_dialog(page, dialog)
 
     search_input.on_change = lambda e: render()
     load_data()
@@ -139,5 +146,5 @@ def build_productos_view(page: ft.Page, state):
         ],
         spacing=20,
         expand=True,
-        scroll=ft.ScrollMode.AUTO,
+        scroll=ft.ScrollMode.ALWAYS,
     )

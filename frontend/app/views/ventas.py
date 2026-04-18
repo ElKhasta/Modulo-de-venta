@@ -1,6 +1,6 @@
 ﻿import flet as ft
 
-from app.components.ui import app_card, empty_state, field, money, page_header, primary_button, secondary_button, show_message
+from app.components.ui import app_card, close_dialog, empty_state, field, money, open_dialog, page_header, primary_button, secondary_button, set_button_label, show_message
 from app.services.api import AuthenticationError, ApiError
 from app.theme import ERROR, NAVY, SUCCESS, TEXT, TEXT_SOFT
 
@@ -15,8 +15,8 @@ def build_ventas_view(page: ft.Page, state):
     cliente_dropdown = ft.Dropdown(label="Cliente", border_radius=14, filled=True, bgcolor="#F4F6F8")
     producto_dropdown = ft.Dropdown(label="Producto", border_radius=14, filled=True, bgcolor="#F4F6F8", expand=True)
     cantidad_field = field("Cantidad", value="1", width=120)
-    cart_column = ft.Column(spacing=10)
-    sales_column = ft.Column(spacing=12)
+    cart_column = ft.Column(spacing=10, scroll=ft.ScrollMode.ALWAYS)
+    sales_column = ft.Column(spacing=12, scroll=ft.ScrollMode.ALWAYS)
     mode_text = ft.Text("Nueva venta", size=20, weight=ft.FontWeight.W_700, color=TEXT)
     helper_text = ft.Text("Agrega productos al carrito y registra la venta.", size=12, color=TEXT_SOFT)
     total_text = ft.Text(money(0), size=28, weight=ft.FontWeight.W_700, color=NAVY)
@@ -25,10 +25,6 @@ def build_ventas_view(page: ft.Page, state):
         state.logout()
         show_message(page, str(exc), error=True)
         page.go("/login")
-
-    def close_dialog(dialog):
-        dialog.open = False
-        page.update()
 
     def update_catalog_options():
         cliente_dropdown.options = [ft.dropdown.Option(key="", text="Publico general")]
@@ -134,7 +130,7 @@ def build_ventas_view(page: ft.Page, state):
         cantidad_field.value = "1"
         mode_text.value = "Nueva venta"
         helper_text.value = "Agrega productos al carrito y registra la venta."
-        save_button.text = "Guardar venta"
+        set_button_label(save_button, "Guardar venta")
         render_cart()
         page.update()
 
@@ -153,7 +149,7 @@ def build_ventas_view(page: ft.Page, state):
         ]
         mode_text.value = f"Editando venta #{sale['id']}"
         helper_text.value = "Al guardar, el backend recalcula stock y total de forma segura."
-        save_button.text = "Actualizar venta"
+        set_button_label(save_button, "Actualizar venta")
         render_cart()
 
     def remove_item(index: int):
@@ -179,6 +175,11 @@ def build_ventas_view(page: ft.Page, state):
             show_message(page, "Producto no disponible.", error=True)
             return
 
+        current_quantity = sum(item["cantidad"] for item in carrito if item["producto_id"] == product["id"])
+        if current_quantity + quantity > int(product["stock"]):
+            show_message(page, f"Stock insuficiente. Disponible: {product['stock']}.", error=True)
+            return
+
         existing = next((item for item in carrito if item["producto_id"] == product["id"]), None)
         if existing:
             existing["cantidad"] += quantity
@@ -201,19 +202,19 @@ def build_ventas_view(page: ft.Page, state):
             show_message(page, "Agrega al menos un producto al carrito.", error=True)
             return
 
-        payload = {
-            "cliente": int(cliente_dropdown.value) if cliente_dropdown.value else None,
-            "detalles": [
-                {
-                    "producto": item["producto_id"],
-                    "cantidad": int(item["cantidad"]),
-                    "precio_historico": item["precio_historico"],
-                }
-                for item in carrito
-            ],
-        }
-
         try:
+            payload = {
+                "cliente": int(cliente_dropdown.value) if cliente_dropdown.value else None,
+                "detalles": [
+                    {
+                        "producto": item["producto_id"],
+                        "cantidad": int(item["cantidad"]),
+                        "precio_historico": item["precio_historico"],
+                    }
+                    for item in carrito
+                ],
+            }
+
             if editing_sale_id:
                 state.api.put(f"ventas/{editing_sale_id}/", json=payload)
                 show_message(page, "Venta actualizada correctamente.")
@@ -233,27 +234,26 @@ def build_ventas_view(page: ft.Page, state):
             try:
                 state.api.delete(f"ventas/{sale['id']}/")
                 show_message(page, "Venta eliminada correctamente.")
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 if editing_sale_id == sale["id"]:
                     reset_form()
                 refresh_catalogs()
                 load_sales()
             except AuthenticationError as exc:
-                close_dialog(dialog)
+                close_dialog(page, dialog)
                 handle_auth_error(exc)
             except Exception as exc:
                 show_message(page, str(exc), error=True)
 
         dialog = ft.AlertDialog(
             modal=True,
+            scrollable=True,
             title=ft.Text("Eliminar venta"),
             content=ft.Text(f"Se eliminara la venta #{sale['id']} y el stock sera restaurado."),
-            actions=[secondary_button("Cancelar", lambda e: close_dialog(dialog)), primary_button("Eliminar", remove, icon=ft.Icons.DELETE_ROUNDED)],
+            actions=[secondary_button("Cancelar", lambda e: close_dialog(page, dialog)), primary_button("Eliminar", remove, icon=ft.Icons.DELETE_ROUNDED)],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        page.dialog = dialog
-        dialog.open = True
-        page.update()
+        open_dialog(page, dialog)
 
     save_button = primary_button("Guardar venta", lambda e: save_sale(), icon=ft.Icons.CHECK_CIRCLE_ROUNDED)
     cancel_button = secondary_button("Limpiar", lambda e: reset_form())
@@ -330,5 +330,5 @@ def build_ventas_view(page: ft.Page, state):
         ],
         spacing=20,
         expand=True,
-        scroll=ft.ScrollMode.AUTO,
+        scroll=ft.ScrollMode.ALWAYS,
     )
