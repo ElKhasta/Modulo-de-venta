@@ -1,15 +1,14 @@
 from django.shortcuts import render
-from .ia_utils import obtener_recomendaciones_multiples
+from .ia_utils import obtener_recomendacion_vania
 
-def buscador_VANTTI(request):
-    # Capturamos lo que el usuario escribe en el buscador (por defecto Queso)
-    query = request.GET.get('q', '')
-    sugerencias = ""
+def catalogo_VANTTI(request):
+    # Detectamos la sección. Si no hay, por defecto es Queso Oaxaca.
+    seccion = request.GET.get('seccion', 'Queso Oaxaca')
     
-    if query:
-        sugerencias = obtener_recommendaciones_multiples(query)
+    # Llamamos a vanIA solo para ese producto
+    recomendacion = obtener_recomendacion_vania(seccion)
     
     return render(request, 'detalle.html', {
-        'busqueda': query,
-        'sugerencias': sugerencias
+        'producto_activo': seccion,
+        'sugerencia': recomendacion
     })

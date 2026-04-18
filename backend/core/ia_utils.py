@@ -1,16 +1,10 @@
 import json
 import urllib.request
 
-def obtener_recomendaciones_multiples(producto_nombre):
-    url = "http://localhost:11434/api/generate"
-    
-    # Prompt mejorado para pedir 3 opciones
-    prompt = (
-        f"Eres el chef ejecutivo de VANTTI. El cliente tiene: {producto_nombre}. "
-        "Proporciona 3 opciones de recetas diferentes y creativas. "
-        "Para cada opción incluye: 1. Nombre del platillo, 2. Ingredientes clave, 3. Un maridaje sugerido. "
-        "Responde en español de forma estructurada y breve."
-    )
+def obtener_recomendacion_vania(producto):
+    url = "http://127.0.0.1:11434/api/generate"
+    # Volvemos a una sola receta para que sea RÁPIDO
+    prompt = f"Eres un chef de VANTTI. Dame UNA receta rápida con {producto}. Responde en español de forma breve."
     
     data = json.dumps({
         "model": "vanIA",
@@ -22,8 +16,8 @@ def obtener_recomendaciones_multiples(producto_nombre):
     
     try:
         req = urllib.request.Request(url, data=data, headers=headers)
-        with urllib.request.urlopen(req, timeout=40) as response:
+        with urllib.request.urlopen(req, timeout=30) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            return res_data.get('response', "vanIA no pudo generar las opciones.")
+            return res_data.get('response', "vanIA no respondió.")
     except Exception as e:
-        return f"Error de conexión con vanIA: {str(e)}"
+        return f"Ollama no responde. Abre la app de Ollama. Error: {str(e)}"

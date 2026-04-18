@@ -1,23 +1,35 @@
-<div style="font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px;">
-    <h1>🔍 Buscador de Recetas VANTTI</h1>
-    
-    <form method="GET" action="/" style="margin-bottom: 30px;">
-        <input type="text" name="q" placeholder="Ej. Queso Panela, Crema, Leche..." 
-               value="{{ busqueda }}" style="padding: 10px; width: 70%; border-radius: 5px; border: 1px solid #ccc;">
-        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            Consultar a vanIA
-        </button>
-    </form>
-
-    {% if busqueda %}
-        <div style="background-color: #f8f9fa; border-radius: 10px; padding: 20px; border: 1px solid #e9ecef;">
-            <h2 style="color: #333;">Resultados para: {{ busqueda }}</h2>
-            <hr>
-            <div style="white-space: pre-line; line-height: 1.6; color: #444;">
-                {{ sugerencias }}
-            </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>VANTTI - Secciones Inteligentes</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 30px; }
+        .card { background: white; max-width: 700px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .nav-sections { display: flex; gap: 10px; margin-bottom: 25px; justify-content: center; }
+        .btn { padding: 10px 20px; text-decoration: none; background: #007bff; color: white; border-radius: 20px; font-weight: bold; }
+        .btn:hover { background: #0056b3; }
+        .ia-box { background: #f0f7ff; border-left: 5px solid #007bff; padding: 20px; margin-top: 20px; border-radius: 8px; white-space: pre-line; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 style="text-align: center;">🥛 Catálogo VANTTI</h1>
+        
+        <div class="nav-sections">
+            <a href="?seccion=Queso Oaxaca" class="btn">Quesos</a>
+            <a href="?seccion=Crema de Leche" class="btn">Cremas</a>
+            <a href="?seccion=Yogurt de Fresa" class="btn">Yogurts</a>
         </div>
-    {% else %}
-        <p>Escribe el nombre de un producto lácteo para que vanIA te dé ideas de cocina.</p>
-    {% endif %}
-</div>
+
+        <hr>
+
+        <h2>Viendo: {{ producto_activo }}</h2>
+        
+        <div class="ia-box">
+            <strong>✨ Sugerencia de vanIA:</strong><br><br>
+            {{ sugerencia }}
+        </div>
+    </div>
+</body>
+</html>
