@@ -4,86 +4,126 @@ import requests
 BASE_URL = "http://127.0.0.1:8000/api"
 
 def main(page: ft.Page):
-    page.title = "FESConnect - Punto de Venta"
+    page.title = "FESConnect Admin - Punto de Venta"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.window_width = 1200
     page.window_height = 850
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-
+    
     # --- 1. VARIABLES DE ESTADO ---
     carrito = []
-    ventas_totales_dia = {"efectivo": 0.0, "tarjeta": 0.0}
+    lista_productos_db = []
 
-    # --- 2. CAMPOS DE SESIÓN (Definidos primero para evitar NameError) ---
+    # --- 2. INSTANCIACIÓN PREVIA DE COMPONENTES (Para evitar errores de referencia) ---
+    # Campos de Login
     txt_user = ft.TextField(label="Usuario", width=300, prefix_icon=ft.Icons.PERSON)
     txt_pass = ft.TextField(label="Contraseña", password=True, width=300, can_reveal_password=True)
-
+    
+    # Componentes de Ventas
+    input_cantidad = ft.TextField(label="Cant.", value="1", width=80, text_align="center")
+    input_recibido = ft.TextField(label="Recibido", width=120)
+    txt_total_v = ft.Text("Total: $0.00", size=24, weight="bold")
+    txt_cambio_display = ft.Text("Cambio: $0.00", size=18)
+    btn_finalizar = ft.FilledButton("Cobrar", disabled=True, bgcolor=ft.Colors.GREY_400)
+    
+    # Tablas y Buscador
+    tabla_ventas = ft.DataTable(
+        expand=True,
+        columns=[
+            ft.DataColumn(ft.Text("Producto")), ft.DataColumn(ft.Text("Precio")),
+            ft.DataColumn(ft.Text("Cant.")), ft.DataColumn(ft.Text("Subtotal")),
+            ft.DataColumn(ft.Text("Acción"))
+        ]
+    )
+    
+    tabla_stock = ft.DataTable(
+        expand=True,
+        columns=[
+            ft.DataColumn(ft.Text("Código")), ft.DataColumn(ft.Text("Producto")),
+            ft.DataColumn(ft.Text("Precio")), ft.DataColumn(ft.Text("Existencia")),
+            ft.DataColumn(ft.Text("Acciones"))
+        ]
+    )
+    # Campos para crear nuevo usuario
+    new_user_name = ft.TextField(label="Nombre de Usuario", width=300)
+    new_user_pass = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=300)
+    new_user_role = ft.Dropdown(
+        label="Rol",
+        width=300,
+        options=[
+            ft.dropdown.Option("admin", "Administrador"),
+            ft.dropdown.Option("staff", "Vendedor"),
+        ],
+        value="staff"
+    )
+    
+    tabla_usuarios = ft.DataTable(
+        expand=True,
+        columns=[
+            ft.DataColumn(ft.Text("ID")),
+            ft.DataColumn(ft.Text("Usuario")),
+            ft.DataColumn(ft.Text("Rol")),
+            ft.DataColumn(ft.Text("Acciones")),
+        ]
+    )
+    # --- 3. FUNCIONES DE APOYO ---
     def mostrar_snack(texto, color=ft.Colors.RED):
         snack = ft.SnackBar(ft.Text(texto), bgcolor=color)
         page.overlay.append(snack)
         snack.open = True
         page.update()
 
-    # ==========================================
-    # LÓGICA DE NEGOCIO (INYECCIÓN DEL CÓDIGO 1)
-    # ==========================================
-    
+    # --- 4. LÓGICA DE NEGOCIO ---
+    def cargar_productos_busqueda():
+        try:
+            res = requests.get(f"{BASE_URL}/productos/", timeout=5)
+            if res.status_code == 200:
+                nonlocal lista_productos_db
+                lista_productos_db = res.json()
+                input_busqueda.suggestions = [
+                    ft.AutoCompleteSuggestion(key=p['nombre'], value=p['nombre']) 
+                    for p in lista_productos_db
+                ]
+                page.update()
+        except: pass
+
+    def cargar_tabla_stock():
+        tabla_stock.rows.clear()
+        try:
+            res = requests.get(f"{BASE_URL}/productos/", timeout=5)
+            if res.status_code == 200:
+                for p in res.json():
+                    stock_actual = int(p.get('stock', 0))
+                    color_alerta = ft.Colors.RED_600 if stock_actual < 5 else ft.Colors.BLACK
+                    tabla_stock.rows.append(ft.DataRow(cells=[
+                        ft.DataCell(ft.Text(p.get('codigo_barras', 'S/C'))),
+                        ft.DataCell(ft.Text(p['nombre'])),
+                        ft.DataCell(ft.Text(f"${float(p['precio']):.2f}")),
+                        ft.DataCell(ft.Text(str(stock_actual), color=color_alerta, weight="bold")),
+                        ft.DataCell(ft.IconButton(ft.Icons.EDIT, icon_color="blue700"))
+                    ]))
+                page.update()
+        except Exception as e:
+            mostrar_snack(f"Error al cargar stock: {e}")
+
     def calcular_cambio_real(e=None):
         try:
             total = sum(item['precio'] * item['cantidad'] for item in carrito)
             recibido = float(input_recibido.value) if input_recibido.value else 0
             cambio = recibido - total
-            
-            # Bloqueo dinámico del botón de cobro
             esta_bloqueado = (cambio < 0 or total == 0)
             btn_finalizar.disabled = esta_bloqueado
             btn_finalizar.bgcolor = ft.Colors.GREY_400 if esta_bloqueado else ft.Colors.GREEN
-            
             if cambio >= 0:
-                txt_cambio_display.value = f"Cambio: ${cambio:.2f}"
-                txt_cambio_display.color = "green"
+                txt_cambio_display.value = f"Cambio: ${cambio:.2f}"; txt_cambio_display.color = "green"
             else:
-                txt_cambio_display.value = f"Faltan: ${abs(cambio):.2f}"
-                txt_cambio_display.color = "red"
+                txt_cambio_display.value = f"Faltan: ${abs(cambio):.2f}"; txt_cambio_display.color = "red"
         except:
-            btn_finalizar.disabled = True
+            btn_finalizar.disabled = True; btn_finalizar.bgcolor = ft.Colors.GREY_400
         page.update()
 
-    def agregar_producto_event(e):
-        busqueda = input_busqueda.value.strip()
-        if not busqueda: return
-        try:
-            res = requests.get(f"{BASE_URL}/productos/", timeout=5)
-            if res.status_code == 200:
-                prod = next((p for p in res.json() if p['nombre'].lower() == busqueda.lower() or p.get('codigo_barras') == busqueda), None)
-                if prod:
-                    cant_v = int(input_cantidad.value)
-                    stock_real = int(prod['stock'])
-                    en_carrito = sum(i['cantidad'] for i in carrito if i['id'] == prod['id'])
-                    
-                    # Validación de Stock
-                    if (en_carrito + cant_v) > stock_real:
-                        mostrar_snack(f"⚠️ Stock insuficiente: {stock_real} disponibles")
-                        return
-
-                    if en_carrito > 0:
-                        for i in carrito:
-                            if i['id'] == prod['id']: i['cantidad'] += cant_v
-                    else:
-                        carrito.append({"id": prod['id'], "nombre": prod['nombre'], "precio": float(prod['precio']), "cantidad": cant_v})
-                    
-                    input_busqueda.value = ""; input_cantidad.value = "1"
-                    actualizar_interfaz_ventas()
-                else: mostrar_snack("❌ Producto no encontrado")
-        except: mostrar_snack("🌐 Error de red")
-
-    def finalizar_venta_event(e):
-        total = sum(item['precio'] * item['cantidad'] for item in carrito)
-        ventas_totales_dia[radio_pago.value] += total
-        carrito.clear()
-        input_recibido.value = ""
-        mostrar_snack("✅ Venta procesada", "green")
+    def eliminar_item(item_id):
+        nonlocal carrito
+        carrito = [i for i in carrito if i['id'] != item_id]
         actualizar_interfaz_ventas()
 
     def actualizar_interfaz_ventas():
@@ -101,147 +141,202 @@ def main(page: ft.Page):
             ]))
         txt_total_v.value = f"Total: ${total:.2f}"
         calcular_cambio_real()
+        page.update()
 
-    def eliminar_item(item_id):
-        nonlocal carrito
-        carrito = [i for i in carrito if i['id'] != item_id]
+    def agregar_producto_event(e):
+        busqueda = input_busqueda.value.strip()
+        if not busqueda: return
+        try:
+            res = requests.get(f"{BASE_URL}/productos/", timeout=5)
+            if res.status_code == 200:
+                prod = next((p for p in res.json() if p['nombre'].lower() == busqueda.lower() or p.get('codigo_barras') == busqueda), None)
+                if prod:
+                    cant_v = int(input_cantidad.value)
+                    if (sum(i['cantidad'] for i in carrito if i['id'] == prod['id']) + cant_v) > int(prod['stock']):
+                        mostrar_snack("⚠️ Stock insuficiente"); return
+                    
+                    en_carrito = next((i for i in carrito if i['id'] == prod['id']), None)
+                    if en_carrito: 
+                        en_carrito['cantidad'] += cant_v
+                    else: 
+                        carrito.append({"id": prod['id'], "nombre": prod['nombre'], "precio": float(prod['precio']), "cantidad": cant_v})
+                    
+                    input_busqueda.value = ""; input_cantidad.value = "1"
+                    actualizar_interfaz_ventas()
+                else: mostrar_snack("❌ Producto no encontrado")
+        except: mostrar_snack("🌐 Error de red")
+
+    def finalizar_venta_event(e):
+        # Simulación de POST a la API
+        carrito.clear()
+        input_recibido.value = ""
+        mostrar_snack("✅ Venta exitosa", ft.Colors.GREEN)
         actualizar_interfaz_ventas()
+        cargar_productos_busqueda()
+    
+    def cargar_tabla_usuarios():
+        tabla_usuarios.rows.clear()
+        try:
+            # Importante: Asegúrate que esta ruta exista en tu Django
+            res = requests.get(f"{BASE_URL}/usuarios/", timeout=5)
+            if res.status_code == 200:
+                for u in res.json():
+                    tabla_usuarios.rows.append(ft.DataRow(cells=[
+                        ft.DataCell(ft.Text(str(u['id']))),
+                        ft.DataCell(ft.Text(u['username'])),
+                        ft.DataCell(ft.Text("Admin" if u.get('is_staff') else "Vendedor")),
+                        ft.DataCell(ft.IconButton(ft.Icons.DELETE, icon_color="red", on_click=lambda _, id=u['id']: eliminar_usuario(id))),
+                    ]))
+                page.update()
+        except:
+            mostrar_snack("Error al conectar con la lista de usuarios")
 
-    # ==========================================
-    # DEFINICIÓN DE VISTAS (DISEÑO DEL CÓDIGO 2)
-    # ==========================================
-    
-    # --- VENTAS ---
-    dropdown_cliente = ft.Dropdown(label="Cliente", expand=True, options=[ft.dropdown.Option("0", "Público General")], value="0")
-    input_busqueda = ft.TextField(label="Producto o Código", expand=True, on_submit=agregar_producto_event)
-    input_cantidad = ft.TextField(label="Cant.", value="1", width=80, text_align="center")
-    tabla_ventas = ft.DataTable(expand=True, columns=[
-        ft.DataColumn(ft.Text("Producto")), ft.DataColumn(ft.Text("Precio")),
-        ft.DataColumn(ft.Text("Cant.")), ft.DataColumn(ft.Text("Subtotal")), ft.DataColumn(ft.Text("Acción"))
-    ])
-    
-    radio_pago = ft.RadioGroup(content=ft.Row([
-        ft.Radio(value="efectivo", label="Efectivo 💵"),
-        ft.Radio(value="tarjeta", label="Tarjeta/Transf. 💳"),
-    ]), value="efectivo")
-    
-    input_recibido = ft.TextField(label="Recibido $", width=150, on_change=calcular_cambio_real)
-    txt_cambio_display = ft.Text("Cambio: $0.00", size=20, weight="bold", color="green")
-    txt_total_v = ft.Text("Total: $0.00", size=28, weight="bold", color="blue900")
-    btn_finalizar = ft.FilledButton(
-        "Finalizar", 
-        icon=ft.Icons.CHECK, 
-        color="white", 
-        bgcolor=ft.Colors.GREY_400, 
-        disabled=True, 
-        on_click=finalizar_venta_event
+    def guardar_usuario(e):
+        if not new_user_name.value or not new_user_pass.value:
+            mostrar_snack("Llena todos los campos")
+            return
+            
+        datos = {
+            "username": new_user_name.value,
+            "password": new_user_pass.value,
+            "is_staff": True if new_user_role.value == "admin" else False
+        }
+        
+        try:
+            res = requests.post(f"{BASE_URL}/usuarios/", json=datos, timeout=5)
+            if res.status_code in [200, 201]:
+                mostrar_snack("✅ Usuario creado con éxito", ft.Colors.GREEN)
+                new_user_name.value = ""; new_user_pass.value = ""
+                cargar_tabla_usuarios()
+            else:
+                mostrar_snack(f"Error: {res.text}")
+        except:
+            mostrar_snack("🌐 Error de red al crear usuario")
+
+    def eliminar_usuario(id_user):
+        # Lógica para requests.delete(f"{BASE_URL}/usuarios/{id_user}/")
+        mostrar_snack(f"Eliminando usuario {id_user}...")
+        pass
+    # --- 5. COMPONENTES CON LÓGICA ASIGNADA ---
+    input_busqueda = ft.AutoComplete(
+        suggestions=[],
+        on_select=lambda e: [setattr(input_busqueda, "value", e.selection), agregar_producto_event(None)]
     )
+    input_recibido.on_change = calcular_cambio_real
+    btn_finalizar.on_click = finalizar_venta_event
+
+    # --- 6. VISTAS DE LA APLICACIÓN ---
     view_ventas = ft.Container(
         content=ft.Column([
-            ft.Text("🛒 Módulo de Ventas", size=30, weight="bold"),
-            ft.Row([dropdown_cliente, ft.IconButton(ft.Icons.REFRESH)]),
-            ft.Row([input_busqueda, input_cantidad, ft.FloatingActionButton(icon=ft.Icons.ADD, on_click=agregar_producto_event)]),
+            ft.Text("🛒 Ventas", size=30, weight="bold"),
+            ft.Row([
+                ft.Container(input_busqueda, expand=True),
+                input_cantidad,
+                ft.IconButton(ft.Icons.CAMERA_ALT, tooltip="Escanear con celular", on_click=lambda _: mostrar_snack("Activando cámara...", "blue")),
+                ft.FloatingActionButton(icon=ft.Icons.ADD, on_click=agregar_producto_event)
+            ]),
             ft.Container(content=ft.ListView([tabla_ventas], expand=True), expand=True, border=ft.Border.all(1, "bluegrey100"), border_radius=10, padding=10),
             ft.Row([
-                ft.Column([radio_pago, ft.Row([input_recibido, txt_cambio_display])]),
-                ft.Column([txt_total_v, btn_finalizar], horizontal_alignment="end")
+                ft.Column([
+                    ft.RadioGroup(content=ft.Row([ft.Radio(value="e", label="Efectivo"), ft.Radio(value="t", label="Tarjeta")]), value="e"), 
+                    ft.Row([input_recibido, txt_cambio_display])
+                ]),
+                ft.Column([txt_total_v, btn_finalizar])
             ], alignment="spaceBetween")
-        ]), expand=True, visible=True
+        ]), expand=True
     )
-
-    # --- STOCK ---
+    view_usuarios = ft.Container(
+        content=ft.Column([
+            ft.Text("👥 Gestión de Usuarios", size=30, weight="bold"),
+            ft.Row([
+                ft.Card(
+                    content=ft.Container(
+                        padding=20,
+                        content=ft.Column([
+                            ft.Text("Agregar Nuevo", weight="bold"),
+                            new_user_name,
+                            new_user_pass,
+                            new_user_role,
+                            ft.ElevatedButton("Guardar Usuario", icon=ft.Icons.SAVE, on_click=guardar_usuario)
+                        ])
+                    )
+                ),
+                ft.VerticalDivider(),
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("Usuarios Registrados", weight="bold"),
+                        ft.ListView([tabla_usuarios], expand=True)
+                    ]), expand=True
+                )
+            ], expand=True)
+        ]), expand=True, visible=False
+    )
     view_stock = ft.Container(
         content=ft.Column([
-            ft.Text("📦 Inventario", size=30, weight="bold"),
-            ft.Row([ft.TextField(label="Filtrar...", expand=True), ft.IconButton(ft.Icons.SEARCH)]),
-            ft.ListView(expand=True)
+            ft.Row([ft.Text("📦 Inventario", size=30, weight="bold"), ft.IconButton(ft.Icons.REFRESH, on_click=lambda _: cargar_tabla_stock())]),
+            ft.Container(content=ft.ListView([tabla_stock], expand=True), expand=True, border=ft.Border.all(1, "bluegrey100"), border_radius=10)
         ]), expand=True, visible=False
     )
 
-    # --- CLIENTES ---
-    view_clientes = ft.Container(
-        content=ft.Column([
-            ft.Text("👥 Registro de Clientes", size=30, weight="bold"),
-            ft.TextField(label="Nombre / Razón Social", icon=ft.Icons.PERSON),
-            ft.TextField(label="RFC", icon=ft.Icons.BADGE),
-            ft.TextField(label="Email", icon=ft.Icons.EMAIL),
-            ft.FilledButton("Guardar", icon=ft.Icons.SAVE, color="white", bgcolor="blue")
-        ]), expand=True, visible=False
-    )
-
-    # --- CORTE ---
-    txt_c_efectivo = ft.Text("$0.00", size=45, weight="bold", color="green")
-    txt_c_tarjeta = ft.Text("$0.00", size=45, weight="bold", color="blue")
-    
-    view_corte = ft.Container(
-        content=ft.Column([
-            ft.Text("📊 Resumen del Día", size=35, weight="bold"),
-            ft.Row([
-                ft.Card(content=ft.Container(padding=40, width=400, content=ft.Column([ft.Icon(ft.Icons.ATTACH_MONEY, size=50, color="green"), ft.Text("EFECTIVO", size=20), txt_c_efectivo], horizontal_alignment="center"))),
-                ft.Card(content=ft.Container(padding=40, width=400, content=ft.Column([ft.Icon(ft.Icons.CREDIT_CARD, size=50, color="blue"), ft.Text("TAR_TRANS", size=20), txt_c_tarjeta], horizontal_alignment="center"))),
-            ], alignment=ft.MainAxisAlignment.CENTER, spacing=30),
-            ft.FilledButton("Cerrar Caja", icon=ft.Icons.LOCK_OUTLINE, scale=1.2)
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER, spacing=40),
-        expand=True, visible=False
-    )
-
-    # ==========================================
-    # NAVEGACIÓN
-    # ==========================================
+    # --- 7. NAVEGACIÓN Y LOGIN ---
     def cambiar_tab(e):
         idx = e.control.selected_index
         view_ventas.visible = (idx == 0)
         view_stock.visible = (idx == 1)
-        view_clientes.visible = (idx == 2)
-        view_corte.visible = (idx == 3)
-        if idx == 3:
-            txt_c_efectivo.value = f"${ventas_totales_dia['efectivo']:.2f}"
-            txt_c_tarjeta.value = f"${ventas_totales_dia['tarjeta']:.2f}"
-        if idx == 4: reiniciar()
+        view_usuarios.visible = (idx == 3) # El índice de "Admin" en tu Rail
+        
+        if idx == 1: cargar_tabla_stock()
+        if idx == 3: cargar_tabla_usuarios()
+        if idx == 4: reiniciar() # Salir
         page.update()
 
     rail = ft.NavigationRail(
-        selected_index=0, label_type="all", min_width=100,
+        selected_index=0, label_type="all",
         destinations=[
             ft.NavigationRailDestination(icon=ft.Icons.SHOPPING_CART, label="Ventas"),
             ft.NavigationRailDestination(icon=ft.Icons.INVENTORY, label="Stock"),
-            ft.NavigationRailDestination(icon=ft.Icons.PERSON_ADD, label="Clientes"),
-            ft.NavigationRailDestination(icon=ft.Icons.BAR_CHART, label="Corte"),
+            ft.NavigationRailDestination(icon=ft.Icons.HISTORY, label="Historial"),
+            ft.NavigationRailDestination(icon=ft.Icons.ADMIN_PANEL_SETTINGS, label="Admin"),
             ft.NavigationRailDestination(icon=ft.Icons.LOGOUT, label="Salir"),
         ], on_change=cambiar_tab
     )
 
-    def cargar_principal():
-        page.clean()
-        page.vertical_alignment = ft.MainAxisAlignment.START
-        page.horizontal_alignment = ft.CrossAxisAlignment.START
-        page.add(ft.Row([rail, ft.VerticalDivider(width=1), view_ventas, view_stock, view_clientes, view_corte], expand=True))
-
     def login(e):
-        cargar_principal()
+        user = txt_user.value.strip()
+        passw = txt_pass.value.strip()
+        if not user or not passw:
+            mostrar_snack("Llenar campos")
+            return
+        
+        try:
+            res = requests.post(f"{BASE_URL}/login/", json={"username": user, "password": passw}, timeout=5)
+            if res.status_code in [200, 201]:
+                page.clean()
+                page.add(ft.Row([rail, ft.VerticalDivider(width=1), view_ventas, view_stock], expand=True))
+                cargar_productos_busqueda()
+            else:
+                mostrar_snack("Usuario o contraseña incorrectos")
+        except:
+            mostrar_snack("Error de conexión con el servidor")
 
     login_card = ft.Card(
         content=ft.Container(
             padding=40, width=400,
             content=ft.Column([
-                ft.Icon(ft.Icons.LOCK_PERSON_ROUNDED, size=80, color="blue"),
-                ft.Text("FESConnect POS", size=28, weight="bold"),
-                ft.Divider(height=20, color="transparent"),
-                txt_user,
-                txt_pass,
-                ft.Divider(height=10, color="transparent"),
+                ft.Icon(ft.Icons.LOCK_PERSON, size=80, color="blue"),
+                ft.Text("FESConnect Admin", size=24, weight="bold"),
+                txt_user, txt_pass,
                 ft.FilledButton("Entrar", on_click=login, width=250)
-            ], horizontal_alignment="center", spacing=15)
-        ),
-        elevation=10
+            ], horizontal_alignment="center")
+        ), elevation=10
     )
 
     def reiniciar():
         page.clean()
-        page.vertical_alignment = ft.MainAxisAlignment.CENTER
-        page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+        page.vertical_alignment = "center"
+        page.horizontal_alignment = "center"
         page.add(login_card)
 
-    page.add(login_card)
+    reiniciar()
 
 ft.run(main)

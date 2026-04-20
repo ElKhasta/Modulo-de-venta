@@ -2,9 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view # <--- Necesario para el login
 from rest_framework.response import Response
 from django.db import transaction
-from django.contrib.auth import authenticate # <--- El motor de validación de Django
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User as DjangoUserModel #Para no revolver users
+from supabase_auth import User as SupabaseUser # <--- El motor de validación de Django
 from .models import Producto, Venta, DetalleVenta, Cliente
-from .serializers import ProductoSerializer, VentaSerializer, ClienteSerializer
+from .serializers import ProductoSerializer, VentaSerializer, ClienteSerializer, UserSerializer
 
 # --- VISTAS DE AUTENTICACIÓN ---
 
@@ -94,3 +96,7 @@ class VentaViewSet(viewsets.ModelViewSet):
         except Exception as e:
             print(f"Error interno: {e}")
             return Response({"error": "Error inesperado en el servidor"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = DjangoUserModel.objects.all()
+    serializer_class = UserSerializer

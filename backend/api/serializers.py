@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from supabase_auth import User
 from .models import Producto, Venta, DetalleVenta, Cliente # <--- Añadimos Cliente
 
 class ClienteSerializer(serializers.ModelSerializer):
@@ -30,4 +31,12 @@ class VentaSerializer(serializers.ModelSerializer):
         model = Venta
         # Añadimos 'cliente' (ID) y 'cliente_nombre' (texto) a los campos
         fields = ['id', 'fecha', 'total', 'cliente', 'cliente_nombre', 'detalles']
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'password', 'is_staff']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        return User.objects.create_user(**validated_data) # Importante usar create_user para encriptar pass
         
