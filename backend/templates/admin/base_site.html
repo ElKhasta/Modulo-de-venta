@@ -1,0 +1,719 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}VANTTI | Core Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}" class="logo-container">
+        <div class="vantti-brand-wrapper">
+            <svg class="cow-svg-icon" viewBox="0 0 100 100" fill="none" stroke="var(--cyber-cyan)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                <path class="cow-base" d="M 30 30 L 70 30 L 75 60 L 65 90 L 35 90 L 25 60 Z" fill="rgba(0, 229, 255, 0.05)" />
+                <path d="M 30 30 C 15 15, 5 10, 15 5 C 25 5, 35 20, 40 30" />
+                <path d="M 70 30 C 85 15, 95 10, 85 5 C 75 10, 65 20, 60 30" />
+                <path d="M 25 45 L 5 45 L 20 55 Z" />
+                <path d="M 75 45 L 95 45 L 80 55 Z" />
+                <path class="cow-eyes" d="M 35 50 L 45 55 L 35 55 Z" fill="var(--toxic-green)" stroke="none" style="filter: drop-shadow(0 0 5px var(--toxic-green));" />
+                <path class="cow-eyes" d="M 65 50 L 55 55 L 65 55 Z" fill="var(--toxic-green)" stroke="none" style="filter: drop-shadow(0 0 5px var(--toxic-green));" />
+                <line x1="50" y1="30" x2="50" y2="45" stroke-width="2" stroke-dasharray="4 4"/>
+            </svg>
+            <span class="vantti-logo-text">Vantti</span>
+            <div class="flash-shimmer"></div>
+        </div>
+    </a>
+</h1>
+{% endblock %}
+
+{% block extrastyle %}
+<link href="https://fonts.googleapis.com/css2?family=Damion&family=Mr+Dafoe&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    /* ==========================================================================
+       1. VARIABLES GLOBALES Y FONDO PRINCIPAL (TEMA OSCURO POR DEFECTO)
+       ========================================================================== */
+    :root {
+        --bg-deep: #050814;
+        --card-bg: rgba(13, 18, 30, 0.85);
+        --border-glow: rgba(0, 229, 255, 0.2);
+        --text-main: #f8fafc;
+        --text-muted: #64748b;
+        --toxic-green: #39ff14; 
+        --cyber-cyan: #00e5ff;  
+        --neon-blue: #3b82f6;
+        --warn-yellow: #f59e0b;
+        --alert-red: #ff0055;
+        --hot-pink: #ff2a9d;
+        --electric-purple: #a855f7;
+    }
+
+    body { 
+        background-color: var(--bg-deep);
+        background-image: 
+            radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.08), transparent 30%),
+            radial-gradient(circle at 90% 80%, rgba(255, 42, 157, 0.08), transparent 30%),
+            radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05), transparent 40%);
+        color: var(--text-main); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; 
+        min-height: 100vh; overflow-x: hidden; display: flex; flex-direction: column;
+        position: relative;
+        transition: background-color 0.4s ease;
+    }
+
+    /* ELIMINAR BOTÓN NATIVO DE LA LUNA DE DJANGO DE FORMA ABSOLUTA */
+    #theme-toggle, .theme-toggle, [title="Toggle theme"] {
+        display: none !important;
+    }
+
+    /* MARCA DE AGUA (VACA VANTTI) EN EL FONDO SOLO PARA PÁGINAS INTERNAS */
+    body:not(.dashboard)::before {
+        content: ''; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 70vh; height: 70vh;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%2300e5ff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M 30 30 L 70 30 L 75 60 L 65 90 L 35 90 L 25 60 Z' fill='none' /%3E%3Cpath d='M 30 30 C 15 15, 5 10, 15 5 C 25 5, 35 20, 40 30' /%3E%3Cpath d='M 70 30 C 85 15, 95 10, 85 5 C 75 10, 65 20, 60 30' /%3E%3Cpath d='M 25 45 L 5 45 L 20 55 Z' /%3E%3Cpath d='M 75 45 L 95 45 L 80 55 Z' /%3E%3Cpath d='M 35 50 L 45 55 L 35 55 Z' fill='%2339ff14' stroke='none' /%3E%3Cpath d='M 65 50 L 55 55 L 65 55 Z' fill='%2339ff14' stroke='none' /%3E%3Cline x1='50' y1='30' x2='50' y2='45' stroke-width='2' stroke-dasharray='4 4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: center; background-size: contain;
+        opacity: 0.04; z-index: 0; pointer-events: none; 
+    }
+
+    /* ==========================================================================
+       2. TEMA CLARO (LIGHT THEME) - COLORES, FONDOS Y CONTRASTES EXCLUSIVOS
+       ========================================================================== */
+    body.light-theme {
+        background-color: #ffffff !important;
+        background-image: 
+            radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.15), transparent 30%),
+            radial-gradient(circle at 90% 80%, rgba(255, 42, 157, 0.15), transparent 30%) !important;
+    }
+
+    /* Header y Vaca en Tema Blanco */
+    body.light-theme #header { background: #ffffff !important; border-bottom: 2px solid #e2e8f0 !important; box-shadow: 0 5px 15px rgba(0,0,0,0.05) !important; }
+    
+    body.light-theme .cow-svg-icon { stroke: var(--electric-purple) !important; filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.8)) !important; }
+    body.light-theme .cow-base { fill: rgba(168, 85, 247, 0.1) !important; }
+    body.light-theme .cow-eyes { fill: var(--hot-pink) !important; filter: drop-shadow(0 0 5px var(--hot-pink)) !important; }
+
+    /* Textos Vantti y Sentinel en Tema Blanco (Rosa Neón con borde negro grueso) */
+    body.light-theme .vantti-logo-text,
+    body.light-theme .sentinel-btn {
+        color: var(--hot-pink) !important;
+        text-shadow: 
+            2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 
+            0px 3px 0px #000, 3px 0px 0px #000, 0 0 20px rgba(255, 42, 157, 0.8) !important;
+    }
+    body.light-theme .sentinel-btn:hover {
+        text-shadow: 
+            2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 
+            0px 3px 0px #000, 3px 0px 0px #000, 0 0 30px rgba(255, 42, 157, 1) !important;
+    }
+
+    /* Textos de Cerrar Sesión y Nombre en Tema Blanco (Color NEGRO para que se vean) */
+    body.light-theme #user-tools { color: #000000 !important; }
+    body.light-theme #user-tools a:not(.sentinel-btn) { color: #000000 !important; font-weight: 800 !important; }
+    body.light-theme .user-avatar-container { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+    body.light-theme .user-avatar-container span { color: #000000 !important; }
+    body.light-theme .theme-toggle-btn { color: #000000 !important; filter: drop-shadow(0 0 2px rgba(0,0,0,0.2)); }
+    body.light-theme .server-status-bar { background: #f8fafc !important; border-top: 1px solid #e2e8f0; }
+
+    /* Modificaciones a los formularios, menús laterales y listas en Tema Blanco */
+    body.light-theme:not(.dashboard) form {
+        background: #ffffff !important; box-shadow: 0 15px 40px rgba(0,0,0,0.1) !important; border: 1px solid #cbd5e1 !important;
+    }
+    body.light-theme:not(.dashboard) form::before { background: linear-gradient(90deg, var(--cyber-cyan), var(--electric-purple), var(--hot-pink)) !important; }
+    body.light-theme:not(.dashboard) label { color: #0f172a !important; }
+    body.light-theme:not(.dashboard) .form-row { border-color: #f1f5f9 !important; }
+    
+    body.light-theme:not(.dashboard) input[type="text"], 
+    body.light-theme:not(.dashboard) input[type="password"], 
+    body.light-theme:not(.dashboard) input[type="email"] {
+        background: #f8fafc !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05) !important;
+    }
+    body.light-theme:not(.dashboard) input:focus {
+        background: #ffffff !important; border-color: var(--hot-pink) !important; box-shadow: 0 0 10px rgba(255,42,157,0.2) !important;
+    }
+
+    body.light-theme:not(.dashboard) #nav-sidebar table:nth-of-type(1),
+    body.light-theme:not(.dashboard) #nav-sidebar table:nth-of-type(2),
+    body.light-theme:not(.dashboard) #nav-sidebar .recycle-box table {
+        background: #ffffff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+    }
+    body.light-theme:not(.dashboard) #nav-sidebar tr { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+    body.light-theme:not(.dashboard) #nav-sidebar tr:hover { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+    body.light-theme:not(.dashboard) #nav-sidebar th a { color: #0f172a !important; }
+    body.light-theme:not(.dashboard) #nav-sidebar tr.current-model { background: #f1f5f9 !important; border-left-color: var(--electric-purple) !important; }
+    body.light-theme:not(.dashboard) #nav-sidebar tr.current-model th a { color: var(--electric-purple) !important; }
+
+    /* Listas (Changelists) en Tema Blanco */
+    body.light-theme:not(.dashboard) #changelist-filter { background: #ffffff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important; border-color: #cbd5e1 !important; }
+    body.light-theme:not(.dashboard) #changelist-filter h2 { background: #f8fafc !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+    body.light-theme:not(.dashboard) #changelist-filter a { color: #475569 !important; }
+    body.light-theme:not(.dashboard) #changelist-filter .selected a { color: var(--hot-pink) !important; }
+    
+    body.light-theme:not(.dashboard) #result_list { background: #ffffff !important; border: 1px solid #e2e8f0 !important; width: 100%; border-collapse: collapse; }
+    body.light-theme:not(.dashboard) #result_list thead th { background: #f1f5f9 !important; color: #0f172a !important; border-bottom: 2px solid #cbd5e1 !important; padding: 10px; }
+    body.light-theme:not(.dashboard) #result_list tbody tr { background: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
+    body.light-theme:not(.dashboard) #result_list tbody tr:hover { background: #f8fafc !important; }
+    body.light-theme:not(.dashboard) #result_list tbody td, body.light-theme:not(.dashboard) #result_list tbody th { color: #0f172a !important; padding: 10px; }
+    body.light-theme:not(.dashboard) #result_list tbody th a { color: var(--electric-purple) !important; font-weight: bold; }
+    body.light-theme:not(.dashboard) #changelist .actions { background: #ffffff !important; color: #0f172a !important; padding: 10px; border: 1px solid #e2e8f0; border-bottom: none; }
+    body.light-theme:not(.dashboard) #changelist .actions select { background: #f8fafc !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }
+    body.light-theme:not(.dashboard) .paginator { background: #ffffff !important; color: #0f172a !important; border: 1px solid #e2e8f0; padding: 10px; border-top: none; }
+
+    /* Cajas Permisos en Tema Blanco */
+    body.light-theme:not(.dashboard) .selector-available, body.light-theme:not(.dashboard) .selector-chosen { background: #ffffff !important; }
+    body.light-theme:not(.dashboard) .selector-filter { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+    body.light-theme:not(.dashboard) .selector-filter input { color: #0f172a !important; }
+    body.light-theme:not(.dashboard) .selector select { background: #ffffff !important; color: #0f172a !important; border: 1px solid #e2e8f0 !important; }
+    body.light-theme:not(.dashboard) .selector select option { border-color: #f1f5f9 !important; }
+    body.light-theme:not(.dashboard) .submit-row { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+
+    /* ==========================================================================
+       3. HEADER BASE (INTACTO)
+       ========================================================================== */
+    #header { flex: 0 0 auto; background: rgba(5, 8, 20, 0.98); border-bottom: 1px solid var(--border-glow); padding: 5px 40px; display: flex; align-items: center; justify-content: space-between; z-index: 100; box-shadow: 0 5px 25px rgba(0,0,0,0.8); position: sticky; top: 0; transition: background 0.4s, border 0.4s, box-shadow 0.4s; }
+    .logo-container { text-decoration: none; outline: none; }
+    .vantti-brand-wrapper { display: inline-flex; flex-direction: column; align-items: center; gap: 0px; position: relative; overflow: hidden; padding: 5px 20px; border-radius: 10px; }
+    .cow-svg-icon { width: 55px; height: 55px; filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.5)); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-bottom: -15px; z-index: 1; }
+    .logo-container:hover .cow-svg-icon { transform: scale(1.1) translateY(-5px); filter: drop-shadow(0 0 20px rgba(0, 229, 255, 1)); }
+    .vantti-logo-text { font-family: 'Damion', cursive; font-size: 2.6rem; color: #ffffff; text-shadow: 2px 2px 0px rgba(0,0,0,0.9), 0 0 12px rgba(0, 229, 255, 0.6); z-index: 2; transition: color 0.3s, text-shadow 0.3s; }
+    .flash-shimmer { position: absolute; top: 0; left: -150%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); transform: skewX(-25deg); animation: flashAnim 2s infinite; pointer-events: none; z-index: 3; }
+    @keyframes flashAnim { 0% { left: -150%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+    #user-tools { display: flex; align-items: center; gap: 25px; transition: color 0.3s; }
+    .sentinel-btn { font-family: 'Mr Dafoe', cursive; color: #ffffff !important; font-size: 2.4rem; -webkit-text-stroke: 0px; text-shadow: 2px 2px 0px rgba(0,0,0,0.9), 0 0 15px rgba(0, 229, 255, 0.7); padding: 0 15px; display: inline-flex; transform: rotate(-2deg); text-decoration: none !important; transition: all 0.3s; cursor: pointer; }
+    .sentinel-btn:hover { transform: scale(1.1) rotate(-4deg); text-shadow: 2px 2px 0px rgba(0,0,0,0.9), 0 0 25px rgba(0, 229, 255, 1); }
+    
+    .user-avatar-container { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px 18px 5px 5px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.3s; }
+    .user-avatar-container:hover { border-color: var(--cyber-cyan); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,229,255,0.2); }
+    .avatar-icon { width: 36px; height: 36px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; border: 2px solid var(--cyber-cyan); }
+    .avatar-icon svg { width: 20px; height: 20px; fill: var(--cyber-cyan); }
+    
+    .server-status-bar { flex: 0 0 auto; background: #03050a; border-bottom: 1px solid rgba(0,229,255,0.15); padding: 8px 40px; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--cyber-cyan); font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; z-index: 10; transition: background 0.4s; }
+
+    /* ==========================================================================
+       4. MODALES DE LOGIN Y PAPELERA (PROTEGIDOS EN TEMA OSCURO PARA VISIBILIDAD)
+       ========================================================================== */
+    .login-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+    .login-modal-overlay.active { display: flex; opacity: 1; }
+    .login-modal-box { background: rgba(13, 18, 30, 0.95); border: 2px solid var(--cyber-cyan); border-radius: 12px; padding: 40px; width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0, 229, 255, 0.4), inset 0 0 20px rgba(0,0,0,0.8); transform: translateY(20px); transition: 0.3s ease; }
+    .login-modal-overlay.active .login-modal-box { transform: translateY(0); }
+    .login-modal-box h2 { color: white; font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; margin-top: 0; margin-bottom: 10px; font-size: 1.8rem; }
+    .login-modal-box p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
+    .login-input { width: 100%; background: rgba(0,0,0,0.8); border: 1px solid var(--border-glow); padding: 12px; border-radius: 6px; color: var(--cyber-cyan); font-family: monospace; font-size: 1rem; text-align: center; margin-bottom: 20px; outline: none; transition: 0.3s; }
+    .login-input:focus { border-color: var(--cyber-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
+    .modal-btns { display: flex; gap: 15px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; }
+    .btn-cancel { background: rgba(255,255,255,0.1); color: white; transition: 0.3s; }
+    .btn-cancel:hover { background: rgba(255,0,85,0.2); color: var(--alert-red); border: 1px solid var(--alert-red); }
+    .btn-access { background: rgba(0, 229, 255, 0.2); color: var(--cyber-cyan); border: 1px solid var(--cyber-cyan); transition: 0.3s; }
+    .btn-access:hover { background: var(--cyber-cyan); color: black; box-shadow: 0 0 15px var(--cyber-cyan); }
+    .error-msg { color: var(--alert-red); font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; display: none; font-family: monospace; }
+
+    /* Modal Papelera */
+    .recycle-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(10px); }
+    .recycle-modal.active { display: flex; }
+    .recycle-content { background: rgba(13, 18, 30, 0.95); border: 2px solid var(--alert-red); border-radius: 12px; padding: 30px; width: 600px; box-shadow: 0 0 40px rgba(255,0,85,0.3); }
+    .recycle-content h2 { color: var(--alert-red); font-family: 'Rajdhani'; margin-top: 0; border-bottom: 1px solid var(--alert-red); padding-bottom: 10px; text-align: center; }
+    .recycle-table { width: 100%; color: white; border-collapse: collapse; margin-bottom: 20px; }
+    .recycle-table th, .recycle-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
+    .btn-restore { background: var(--toxic-green); color: black; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+    .btn-restore:hover { box-shadow: 0 0 10px var(--toxic-green); transform: scale(1.05); }
+
+    /* ==========================================================================
+       5. DASHBOARD PRINCIPAL (COMPLETAMENTE INTACTO COMO ORDENASTE)
+       ========================================================================== */
+    body.dashboard #content > h1 { display: none !important; }
+    body.dashboard #content { flex: 1 0 auto; padding: 30px 40px; max-width: 1750px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+    body.dashboard #content-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 30px; align-items: stretch; }
+    body.dashboard .card-module, body.dashboard .module { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid var(--border-glow); border-radius: 14px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s ease; display: flex; flex-direction: column; width: 100%; box-sizing: border-box; margin: 0 !important; }
+    body.dashboard .card-module:hover, body.dashboard .module:hover { border-color: var(--cyber-cyan); box-shadow: 0 15px 40px rgba(0,229,255,0.15); transform: translateY(-4px); }
+    body.dashboard .module caption, body.dashboard .module h2, body.dashboard .widget-title { background: transparent; color: #ffffff; padding: 0 0 12px 0; font-size: 16px; font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; }
+    body.dashboard table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    body.dashboard tr { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.3)); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 14px 20px; margin-bottom: 10px; transition: all 0.3s; }
+    body.dashboard th { border: none; padding: 0; display: flex; align-items: center; white-space: nowrap; }
+    body.dashboard td { border: none; padding: 0; display: flex; gap: 12px; white-space: nowrap; align-items: center; }
+    body.dashboard th a { color: var(--text-main); font-weight: 600; font-size: 15px; text-decoration: none; transition: 0.3s; display: flex; align-items: center; }
+    body.dashboard th a::before { content: '■'; margin-right: 10px; font-size: 12px; color: var(--text-muted); transition: 0.3s; }
+    body.dashboard tr:hover { transform: scale(1.02) translateX(5px); background: linear-gradient(90deg, rgba(0,229,255,0.15), rgba(0,0,0,0.6)); border-color: var(--cyber-cyan); box-shadow: 0 5px 15px rgba(0, 229, 255, 0.2); }
+    body.dashboard tr:hover th a { color: var(--cyber-cyan); text-shadow: 0 0 8px var(--cyber-cyan); }
+    body.dashboard tr:hover th a::before { color: var(--toxic-green); text-shadow: 0 0 8px var(--toxic-green); }
+    
+    body.dashboard .addlink, body.dashboard .changelink { background: rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-weight: bold; font-size: 12px; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px; }
+    body.dashboard .addlink:hover { background: rgba(57, 255, 20, 0.15); color: var(--toxic-green); box-shadow: 0 0 12px rgba(57,255,20,0.4); transform: translateY(-2px); }
+    body.dashboard .changelink:hover { background: rgba(245, 158, 11, 0.15); color: var(--warn-yellow); box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); transform: translateY(-2px); }
+    
+    body.dashboard ul.actionlist { padding: 0; margin: 0; list-style: none; overflow-y: auto; max-height: 250px; }
+    body.dashboard ul.actionlist li { background: rgba(0,0,0,0.4); padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; border-left: 3px solid rgba(255,255,255,0.1); transition: 0.3s; display: flex; flex-direction: column; }
+    body.dashboard ul.actionlist li:hover { border-color: var(--cyber-cyan); background: rgba(0, 229, 255, 0.05); transform: translateX(4px); }
+    body.dashboard ul.actionlist a { color: var(--text-main); font-weight: 600; font-size: 14px; text-decoration: none; }
+    body.dashboard ul.actionlist li:hover a { color: var(--cyber-cyan); }
+
+    /* WIDGETS */
+    body.dashboard .widgets-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px; margin-top: 10px; }
+    body.dashboard .sys-monitor { display: flex; flex-direction: column; gap: 15px; }
+    body.dashboard .bar-group { width: 100%; }
+    body.dashboard .bar-label { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; font-family: 'Rajdhani', sans-serif; margin-bottom: 5px; color: var(--text-muted); }
+    body.dashboard .bar-track { width: 100%; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+    body.dashboard .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease-in-out; position: relative; }
+    body.dashboard .cpu-fill { background: linear-gradient(90deg, #00e5ff, #0088ff); width: 45%; }
+    body.dashboard .ram-fill { background: linear-gradient(90deg, #39ff14, #00cc00); width: 68%; }
+    body.dashboard .terminal-box { background: #02040a; border: 1px solid #1e293b; border-radius: 8px; padding: 15px; height: 100px; font-family: monospace; font-size: 12px; color: var(--toxic-green); overflow: hidden; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.9); }
+    body.dashboard .scanline { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--cyber-cyan); box-shadow: 0 0 8px var(--cyber-cyan); animation: scan 3s linear infinite; pointer-events: none; }
+    @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
+    body.dashboard .log-line { margin: 5px 0; opacity: 0; animation: fadeLog 0.3s forwards; }
+    @keyframes fadeLog { to { opacity: 1; } }
+    body.dashboard .network-nodes { display: flex; flex-wrap: wrap; gap: 12px; }
+    body.dashboard .node-pill { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-glow); padding: 8px 15px; border-radius: 20px; font-size: 12px; font-family: 'Rajdhani'; font-weight: bold; color: var(--text-main); }
+    body.dashboard .node-pill.active .indicator { width: 10px; height: 10px; background: var(--toxic-green); border-radius: 50%; box-shadow: 0 0 10px var(--toxic-green); animation: blink 1.5s infinite; }
+    body.dashboard .node-pill.syncing .indicator { width: 10px; height: 10px; background: var(--cyber-cyan); border-radius: 50%; box-shadow: 0 0 10px var(--cyber-cyan); animation: blink 0.5s infinite; }
+
+    /* ==========================================================================
+       6. ESTILOS PÁGINAS INTERNAS (FORMULARIOS OSCUROS POR DEFECTO Y MODO AVANZADO)
+       ========================================================================== */
+    @keyframes symbolPulse { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); text-shadow: 0 0 8px currentColor; } 100% { opacity: 0.4; transform: scale(0.9); } }
+
+    body:not(.dashboard) #content {
+        padding: 40px 20px; max-width: 1400px; margin: 0 auto;
+        display: flex; gap: 40px; align-items: flex-start; justify-content: center;
+        position: relative; z-index: 1;
+    }
+
+    body:not(.dashboard) #nav-sidebar { display: block !important; flex: 0 0 300px; background: transparent; border: none; padding: 0; box-shadow: none; }
+    body:not(.dashboard) #nav-sidebar caption { background-color: transparent !important; background: none !important; padding: 15px; border-radius: 10px; margin-bottom: 15px; color: #ffffff !important; font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; text-align: left; }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(1) { background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(0, 0, 0, 0.7)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15); display: table; width: 100%; box-sizing: border-box; }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(1) caption { color: var(--electric-purple) !important; border-bottom: 2px solid rgba(168, 85, 247, 0.4) !important; text-shadow: 0 0 10px rgba(168, 85, 247, 0.5) !important; }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(1) tr:hover th a { color: var(--electric-purple); text-shadow: 0 0 8px var(--electric-purple); }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(1) tr:hover th a::before { color: var(--electric-purple); }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(2) { background: linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(0, 0, 0, 0.7)); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0, 229, 255, 0.15); display: table; width: 100%; box-sizing: border-box; }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(2) caption { color: var(--cyber-cyan) !important; border-bottom: 2px solid rgba(0, 229, 255, 0.4) !important; text-shadow: 0 0 10px rgba(0, 229, 255, 0.5) !important; }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(2) tr:hover th a { color: var(--cyber-cyan); text-shadow: 0 0 8px var(--cyber-cyan); }
+    body:not(.dashboard) #nav-sidebar table:nth-of-type(2) tr:hover th a::before { color: var(--cyber-cyan); }
+    body:not(.dashboard) #nav-sidebar tr { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); margin-bottom: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease; padding: 8px 15px; }
+    body:not(.dashboard) #nav-sidebar tr:hover { background: rgba(255, 255, 255, 0.05); transform: translateX(5px); border-color: rgba(255,255,255,0.2); }
+    body:not(.dashboard) #nav-sidebar th { padding: 0; border: none; flex-grow: 1; text-align: left; }
+    body:not(.dashboard) #nav-sidebar th a { color: var(--text-main); text-decoration: none; font-weight: 600; font-size: 1rem; display: flex; align-items: center; padding: 8px; transition: 0.3s; gap: 8px; }
+    body:not(.dashboard) #nav-sidebar th a::before { content: '⟁'; font-size: 0.8rem; color: var(--text-muted); transition: 0.3s; animation: symbolPulse 2s infinite; }
+    body:not(.dashboard) #nav-sidebar tr.current-model { background: rgba(255,255,255,0.1); border-left: 4px solid var(--text-main); border-radius: 4px 8px 8px 4px; }
+    body:not(.dashboard) #nav-sidebar tr.current-model th a { color: white; font-weight: 800; }
+
+    /* ÁREA PRINCIPAL */
+    body:not(.dashboard) #content-main { flex: 1; width: 100%; min-width: 0; animation: fadeUp 0.5s ease-out; z-index: 1; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    body:not(.dashboard) .breadcrumbs { background: transparent; padding: 0 0 20px 0; border: none; color: var(--text-muted); font-size: 0.95rem; font-family: 'Rajdhani', sans-serif; text-transform: uppercase; }
+    body:not(.dashboard) .breadcrumbs a { color: var(--electric-purple); text-decoration: none; font-weight: bold; transition: 0.3s; }
+    body:not(.dashboard) .breadcrumbs a:hover { color: var(--hot-pink); text-shadow: 0 0 10px var(--hot-pink); }
+
+    /* BOTONES MODO AVANZADO */
+    .btn-advanced-config {
+        background: rgba(245, 158, 11, 0.1); border: 2px solid var(--warn-yellow); color: var(--warn-yellow);
+        padding: 8px 15px; border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; text-transform: uppercase;
+        cursor: pointer; transition: 0.3s; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px;
+        margin-left: auto; font-size: 0.9rem; text-decoration: none;
+    }
+    .btn-advanced-config:hover { background: var(--warn-yellow); color: black; box-shadow: 0 0 15px var(--warn-yellow); transform: translateY(-2px); }
+
+    .btn-close-advanced {
+        background: rgba(255, 0, 85, 0.1); border: 2px solid var(--alert-red); color: var(--alert-red);
+        padding: 8px 15px; border-radius: 6px; font-family: 'Rajdhani'; font-weight: bold; text-transform: uppercase;
+        cursor: pointer; transition: 0.3s; letter-spacing: 1px; display: none; align-items: center; gap: 8px;
+        font-size: 0.9rem; text-decoration: none;
+    }
+    .btn-close-advanced:hover { background: var(--alert-red); color: white; box-shadow: 0 0 15px var(--alert-red); transform: translateY(-2px); }
+
+    /* OCULTAMIENTO MASIVO MIENTRAS ESTÉ BLOQUEADO */
+    body:not(.dashboard):not(.advanced-mode) #nav-sidebar td,
+    body:not(.dashboard):not(.advanced-mode) .addlink,
+    body:not(.dashboard):not(.advanced-mode) .changelink,
+    body:not(.dashboard):not(.advanced-mode) .trash-btn-list,
+    body:not(.dashboard):not(.advanced-mode) .submit-row,
+    body:not(.dashboard):not(.advanced-mode) .object-tools { display: none !important; }
+
+    /* FORMULARIOS Y TABLAS (Modo Oscuro Default) */
+    body:not(.dashboard) form { background: linear-gradient(180deg, rgba(13,18,30,0.9), rgba(5,8,20,0.9)); border: 1px solid var(--border-glow); border-radius: 20px; padding: 50px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); backdrop-filter: blur(15px); }
+    body:not(.dashboard) form::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, var(--cyber-cyan), var(--electric-purple), var(--hot-pink)); }
+    body:not(.dashboard) fieldset { border: none; padding: 0; margin: 0; }
+    body:not(.dashboard) .form-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 25px 0; display: flex; flex-direction: column; gap: 12px; }
+    body:not(.dashboard) .form-row:last-child { border-bottom: none; }
+    body:not(.dashboard) label { color: var(--cyber-cyan); font-weight: bold; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; font-family: 'Rajdhani'; display: flex; align-items: center; gap: 8px; }
+    body:not(.dashboard) label::before { content: '◈'; font-size: 0.8rem; color: var(--hot-pink); animation: symbolPulse 2s infinite; }
+    body:not(.dashboard) input[type="text"], body:not(.dashboard) input[type="password"], body:not(.dashboard) input[type="email"] { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 15px; border-radius: 8px; font-family: monospace; width: 100%; max-width: 600px; transition: 0.3s; outline: none; font-size: 1.1rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    body:not(.dashboard) input:focus { border-color: var(--hot-pink); box-shadow: 0 0 20px rgba(255, 42, 157, 0.3); background: rgba(0,0,0,0.9); }
+
+    body:not(.dashboard) #changelist-filter { background: rgba(13, 18, 30, 0.7); border: 1px solid var(--border-glow); border-radius: 12px; backdrop-filter: blur(10px); padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-left: 20px; }
+    body:not(.dashboard) #changelist-filter h2 { background: rgba(0, 229, 255, 0.15); color: var(--cyber-cyan); padding: 10px; font-family: 'Rajdhani', sans-serif; text-transform: uppercase; font-weight: bold; border-bottom: 1px solid var(--cyber-cyan); border-radius: 6px 6px 0 0; margin-top: 0; }
+    body:not(.dashboard) #changelist-filter a { color: var(--text-muted); text-decoration: none; transition: 0.3s; display: block; padding: 5px 0; }
+    body:not(.dashboard) #changelist-filter a:hover { color: var(--hot-pink); text-shadow: 0 0 8px var(--hot-pink); }
+    body:not(.dashboard) #changelist-filter .selected a { color: var(--cyber-cyan); font-weight: bold; }
+
+    /* SELECTOR MAGIA */
+    body:not(.dashboard) .selector { display: flex; justify-content: space-between; align-items: stretch; gap: 20px; width: 100%; margin-top: 20px; }
+    body:not(.dashboard) .selector-available { flex: 1; border: 1px solid var(--cyber-cyan); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.5); box-shadow: 0 0 15px rgba(0,229,255,0.15); display: flex; flex-direction: column; }
+    body:not(.dashboard) .selector-available h2 { background: rgba(0, 229, 255, 0.15); color: var(--cyber-cyan); padding: 15px; margin: 0; font-size: 1rem; font-family: 'Rajdhani'; border-bottom: 1px solid var(--cyber-cyan); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-align: center; }
+    body:not(.dashboard) .selector-chosen { flex: 1; border: 1px solid var(--hot-pink); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.5); box-shadow: 0 0 15px rgba(255,42,157,0.15); display: flex; flex-direction: column; }
+    body:not(.dashboard) .selector-chosen h2 { background: rgba(255, 42, 157, 0.15); color: var(--hot-pink); padding: 15px; margin: 0; font-size: 1rem; font-family: 'Rajdhani'; border-bottom: 1px solid var(--hot-pink); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; text-align: center; }
+    body:not(.dashboard) .selector-filter { padding: 12px; background: rgba(0,0,0,0.8); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; }
+    body:not(.dashboard) .selector-filter input { width: 100%; background: transparent; border: none; color: white; outline: none; margin-left: 10px; font-family: monospace; font-size: 0.9rem; }
+    body:not(.dashboard) .selector select { background: transparent; border: none; padding: 10px; height: 350px !important; width: 100%; color: var(--text-main); font-family: monospace; font-size: 0.9rem; outline: none; overflow-y: auto; }
+    body:not(.dashboard) .selector select option { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s; cursor: pointer; }
+    body:not(.dashboard) .selector-available select option:hover, body:not(.dashboard) .selector-available select option:checked { background: rgba(0, 229, 255, 0.3) !important; color: white; }
+    body:not(.dashboard) .selector-chosen select option:hover, body:not(.dashboard) .selector-chosen select option:checked { background: rgba(255, 42, 157, 0.3) !important; color: white; }
+    body:not(.dashboard) ul.selector-chooser { background: transparent; border: none; display: flex; flex-direction: column; gap: 15px; justify-content: center; padding: 0; margin: 0 10px; }
+    body:not(.dashboard) .selector-add, body:not(.dashboard) .selector-remove { border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; text-decoration: none; font-weight: bold; font-size: 1.5rem; }
+    body:not(.dashboard) .selector-add { background: rgba(0, 229, 255, 0.1); border: 2px solid var(--cyber-cyan); color: var(--cyber-cyan); }
+    body:not(.dashboard) .selector-add:hover { background: var(--cyber-cyan); color: black; box-shadow: 0 0 20px var(--cyber-cyan); transform: scale(1.15) translateX(5px); }
+    body:not(.dashboard) .selector-remove { background: rgba(255, 42, 157, 0.1); border: 2px solid var(--hot-pink); color: var(--hot-pink); }
+    body:not(.dashboard) .selector-remove:hover { background: var(--hot-pink); color: white; box-shadow: 0 0 20px var(--hot-pink); transform: scale(1.15) translateX(-5px); }
+    body:not(.dashboard) .help-icon { display: none; }
+    body:not(.dashboard) .help { color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; display: block; font-style: italic; }
+    body:not(.dashboard) a.selector-chooseall, body:not(.dashboard) a.selector-clearall { display: block; text-align: center; padding: 15px; background: rgba(255,255,255,0.05); color: white; text-decoration: none; font-weight: bold; font-size: 0.85rem; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+    body:not(.dashboard) a.selector-chooseall:hover { background: var(--cyber-cyan); color: black; }
+    body:not(.dashboard) a.selector-clearall:hover { background: var(--hot-pink); color: white; }
+
+    body:not(.dashboard) .submit-row { background: rgba(0,0,0,0.6); border: 1px solid var(--border-glow); border-radius: 12px; padding: 25px; display: flex; gap: 20px; margin-top: 40px; justify-content: flex-end; align-items: center; }
+    body:not(.dashboard) .submit-row input[type="submit"] { background: rgba(168, 85, 247, 0.1); border: 2px solid var(--electric-purple); color: var(--electric-purple); padding: 12px 35px; border-radius: 8px; font-weight: bold; font-family: 'Rajdhani'; letter-spacing: 1px; font-size: 1.2rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+    body:not(.dashboard) .submit-row input[type="submit"].default { background: var(--electric-purple); color: white; box-shadow: 0 0 20px rgba(168, 85, 247, 0.6); border-color: var(--electric-purple); }
+    body:not(.dashboard) .submit-row input[type="submit"]:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.8); background: var(--electric-purple); color: white; }
+
+    .trash-btn-list { background: rgba(255, 0, 85, 0.1); border: 1px solid rgba(255, 0, 85, 0.4); color: var(--alert-red); padding: 5px 10px; border-radius: 6px; font-size: 0.9rem; text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; margin-left: 10px; cursor: pointer; }
+    .trash-btn-list:hover { background: var(--alert-red); color: white; box-shadow: 0 0 15px var(--alert-red); transform: scale(1.1); }
+</style>
+
+<div class="login-modal-overlay" id="sentinelModal">
+    <div class="login-modal-box">
+        <h2 id="modalTitle">ACCESO SENTINEL</h2>
+        <p id="modalDesc">Solo administradores autorizados.</p>
+        <input type="password" id="adminPassword" class="login-input" placeholder="Clave de seguridad..." />
+        <div class="error-msg" id="errorMsg">Acceso denegado. Clave incorrecta.</div>
+        <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeModal()">Cancelar</button>
+            <button class="modal-btn btn-access" onclick="verifyLogin()">Entrar</button>
+        </div>
+    </div>
+</div>
+
+<div class="login-modal-overlay" id="recycleModal" style="z-index: 2000;">
+    <div class="login-modal-box" style="width: 600px; border-color: var(--alert-red); box-shadow: 0 0 40px rgba(255,0,85,0.3);">
+        <h2 style="color: var(--alert-red);">🗑️ PAPELERA (10 DÍAS)</h2>
+        <table style="width: 100%; color: white; border-collapse: collapse; margin-bottom: 20px; text-align: left;" id="recycleTable">
+            <thead>
+                <tr>
+                    <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Elemento</th>
+                    <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Tiempo restante</th>
+                    <th style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">Acción</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div style="text-align: right;"><button class="modal-btn btn-cancel" onclick="closeRecycle()">Cerrar</button></div>
+    </div>
+</div>
+
+<div class="server-status-bar">
+    <span><span class="status-dot" style="display:inline-block; width:8px; height:8px; background:var(--toxic-green); border-radius:50%; margin-right:8px; box-shadow:0 0 8px var(--toxic-green);"></span> VANTTI CLUSTER SECURE</span>
+    <span>UPTIME: 99.9% | NODES: 3/3 ONLINE</span>
+</div>
+
+<script>
+    let loginActionType = 'redirect'; 
+
+    function closeModal() {
+        document.getElementById('sentinelModal').classList.remove('active');
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    function verifyLogin() {
+        const pass = document.getElementById('adminPassword').value;
+        if (pass === 'admin') { 
+            if (loginActionType === 'redirect') {
+                window.location.href = '/'; 
+            } else if (loginActionType === 'advanced') {
+                document.body.classList.add('advanced-mode');
+                closeModal();
+                const advBtn = document.getElementById('btn-advanced-config');
+                const closeAdvBtn = document.getElementById('btn-close-advanced');
+                if(advBtn) advBtn.style.display = 'none';
+                if(closeAdvBtn) closeAdvBtn.style.display = 'inline-flex';
+                alert('🔓 MODO DE EDICIÓN ACTIVADO. Ahora puedes modificar y borrar registros.');
+            }
+        } else {
+            document.getElementById('errorMsg').style.display = 'block';
+            document.getElementById('adminPassword').style.borderColor = 'var(--alert-red)';
+            setTimeout(() => document.getElementById('adminPassword').style.borderColor = 'var(--border-glow)', 2000);
+        }
+    }
+
+    function openRecycle() { renderRecycleTable(); document.getElementById('recycleModal').classList.add('active'); }
+    function closeRecycle() { document.getElementById('recycleModal').classList.remove('active'); }
+
+    function renderRecycleTable() {
+        const tbody = document.querySelector('#recycleTable tbody');
+        tbody.innerHTML = '';
+        let trashItems = JSON.parse(localStorage.getItem('vantti_trash') || '[]');
+        if(trashItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray; padding:20px;">No hay elementos en la papelera.</td></tr>';
+            return;
+        }
+        trashItems.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">${item.name}</td>
+                <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); color:var(--warn-yellow);">${item.daysLeft} días</td>
+                <td style="padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);"><button style="background: var(--toxic-green); border:none; padding:5px 10px; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="restoreItem(${index})">Restaurar</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function restoreItem(index) {
+        let trashItems = JSON.parse(localStorage.getItem('vantti_trash') || '[]');
+        trashItems.splice(index, 1);
+        localStorage.setItem('vantti_trash', JSON.stringify(trashItems));
+        alert('✅ Registro restaurado exitosamente.');
+        renderRecycleTable();
+        location.reload(); 
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // ==========================================
+        // 1. TEMA CLARO Y OSCURO (BOTÓN DE SOL Y LUNA MÁGICO)
+        // ==========================================
+        const userTools = document.querySelector('#user-tools');
+        if (userTools) {
+            const themeBtn = document.createElement('a');
+            themeBtn.href = '#';
+            themeBtn.className = 'theme-toggle-btn';
+            themeBtn.title = "Cambiar Tema (Claro/Oscuro)";
+            themeBtn.style.cssText = 'font-size: 1.5rem; text-decoration: none; margin-left: 15px; cursor: pointer; transition: 0.3s; display: flex; align-items: center;';
+            
+            // Función para pintar el icono dependiendo del tema actual
+            const updateIcon = () => {
+                themeBtn.innerHTML = document.body.classList.contains('light-theme') ? '☀️' : '🌓';
+            };
+
+            themeBtn.onmouseover = function() { this.style.transform = 'scale(1.2)'; };
+            themeBtn.onmouseout = function() { this.style.transform = 'scale(1)'; };
+            
+            themeBtn.onclick = function(e) {
+                e.preventDefault();
+                document.body.classList.toggle('light-theme');
+                if (document.body.classList.contains('light-theme')) {
+                    localStorage.setItem('vantti_theme', 'light');
+                } else {
+                    localStorage.setItem('vantti_theme', 'dark');
+                }
+                updateIcon();
+            };
+            userTools.appendChild(themeBtn);
+            
+            // Cargar el tema si existe en memoria
+            if (localStorage.getItem('vantti_theme') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            updateIcon(); // Actualiza apenas carga la pagina
+        }
+
+        // ELIMINAR CUALQUIER BOTÓN DE TEMA DE DJANGO NATIVO EN EL DOM
+        const djangoThemeBtns = document.querySelectorAll('[title="Toggle theme"], .theme-toggle');
+        djangoThemeBtns.forEach(btn => btn.remove());
+
+        // ==========================================
+        // 2. CONFIGURACIÓN DEL HEADER Y USUARIO
+        // ==========================================
+        document.querySelectorAll('#user-tools a').forEach(link => {
+            if (link.textContent.toUpperCase().includes('VER SITIO') || link.textContent.toUpperCase().includes('VIEW SITE')) {
+                link.innerHTML = 'Sentinel';
+                link.className = 'sentinel-btn';
+                link.href = 'javascript:void(0)'; 
+                link.onclick = function(e) {
+                    e.preventDefault();
+                    loginActionType = 'redirect';
+                    document.getElementById('modalTitle').textContent = 'ACCESO SENTINEL';
+                    document.getElementById('modalDesc').textContent = 'Solo administradores autorizados.';
+                    document.getElementById('sentinelModal').classList.add('active');
+                    setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+                };
+            }
+        });
+
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) { if (e.key === 'Enter') verifyLogin(); });
+
+        const userStrong = document.querySelector('#user-tools strong');
+        let username = 'Operador';
+        if (userStrong) {
+            username = userStrong.textContent.trim();
+            const avatarHtml = `<div class="user-avatar-container" title="Sesión Activa"><div class="avatar-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></div><span style="color: inherit; font-weight: bold; letter-spacing: 1px; font-size: 1rem;">${username}</span></div>`;
+            userStrong.outerHTML = avatarHtml;
+        }
+
+        const hora = new Date().getHours();
+        let saludo = hora < 12 ? 'Buenos días' : (hora < 19 ? 'Buenas tardes' : 'Buenas noches');
+        const titleHtml = `<div style="display: flex; align-items: baseline; gap: 12px; font-family: 'Rajdhani', sans-serif;"><span style="color: var(--text-muted); font-size: 1.5rem; font-weight: 600;">${saludo},</span><span style="color: var(--cyber-cyan); font-weight: 800; font-size: 1.8rem; letter-spacing: 1px;">${username}</span></div>`;
+        
+        const contentMainContainer = document.querySelector('body.dashboard #content');
+        if (contentMainContainer) {
+            const wrap = document.createElement('div');
+            wrap.style.marginBottom = '25px';
+            wrap.innerHTML = titleHtml;
+            contentMainContainer.insertBefore(wrap, contentMainContainer.firstChild);
+        }
+
+        const innerContent = document.querySelector('body:not(.dashboard) #content-main');
+        if (innerContent) {
+            const innerTitleWrapper = document.createElement('div');
+            innerTitleWrapper.style.marginBottom = '25px';
+            innerTitleWrapper.style.borderBottom = '1px solid var(--border-glow)';
+            innerTitleWrapper.style.paddingBottom = '15px';
+            innerTitleWrapper.style.display = 'flex';
+            innerTitleWrapper.style.justifyContent = 'space-between';
+            innerTitleWrapper.style.alignItems = 'center';
+            
+            innerTitleWrapper.innerHTML = titleHtml + `
+                <div style="display: flex; gap: 15px;">
+                    <a href="#" id="btn-advanced-config" class="btn-advanced-config">⚙️ CONFIGURACIÓN AVANZADA</a>
+                    <a href="#" id="btn-close-advanced" class="btn-close-advanced">🔒 CERRAR EDICIÓN</a>
+                </div>
+            `;
+            innerContent.insertBefore(innerTitleWrapper, innerContent.firstChild);
+
+            document.getElementById('btn-advanced-config').addEventListener('click', function(e) {
+                e.preventDefault();
+                loginActionType = 'advanced';
+                document.getElementById('modalTitle').textContent = 'ACTIVAR EDICIÓN';
+                document.getElementById('modalDesc').textContent = 'Ingrese clave admin para desbloquear controles.';
+                document.getElementById('sentinelModal').classList.add('active');
+                setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+            });
+
+            document.getElementById('btn-close-advanced').addEventListener('click', function(e) {
+                e.preventDefault();
+                document.body.classList.remove('advanced-mode');
+                document.getElementById('btn-close-advanced').style.display = 'none';
+                document.getElementById('btn-advanced-config').style.display = 'inline-flex';
+                alert('🔒 MODO DE EDICIÓN DESACTIVADO. Cambios y opciones protegidos.');
+            });
+        }
+
+        document.querySelectorAll('a, caption, h2').forEach(el => { if (el.textContent.trim() === 'Registro seguridads') { el.textContent = 'Registros de seguridad'; } });
+        const defaultH1 = document.querySelector('body:not(.dashboard) #content > h1');
+        if(defaultH1) defaultH1.style.display = 'none';
+
+        // ==========================================
+        // 3. WIDGETS DEL DASHBOARD PRINCIPAL
+        // ==========================================
+        const contentGrid = document.getElementById('content-main');
+        const recentActions = document.getElementById('recent-actions-module');
+        if (contentGrid && recentActions && document.body.classList.contains('dashboard')) {
+            contentGrid.appendChild(recentActions);
+            const contentRelated = document.getElementById('content-related');
+            if (contentRelated) contentRelated.style.display = 'none';
+
+            const widgetsHtml = `
+                <div class="widgets-row">
+                    <div class="card-module">
+                        <h2 class="widget-title">Core Telemetry</h2>
+                        <div class="sys-monitor">
+                            <div class="bar-group"><div class="bar-label"><span>LLM Processing (CPU)</span><span id="cpu-val">42%</span></div><div class="bar-track"><div class="bar-fill cpu-fill" id="cpu-bar"></div></div></div>
+                            <div class="bar-group"><div class="bar-label"><span>Model Cache (RAM)</span><span id="ram-val">75%</span></div><div class="bar-track"><div class="bar-fill ram-fill" id="ram-bar"></div></div></div>
+                        </div>
+                    </div>
+                    <div class="card-module">
+                        <h2 class="widget-title">Sentinel Security Log</h2>
+                        <div class="terminal-box" id="term-box">
+                            <div class="scanline"></div>
+                            <div class="log-line">> [SYS] Conexión cifrada establecida.</div>
+                            <div class="log-line">> [AI] Nodo vanIA en línea.</div>
+                        </div>
+                    </div>
+                    <div class="card-module">
+                        <h2 class="widget-title">Network Status</h2>
+                        <div class="network-nodes">
+                            <div class="node-pill active"><div class="indicator"></div> Main Node</div>
+                            <div class="node-pill active"><div class="indicator"></div> DB Server</div>
+                            <div class="node-pill syncing"><div class="indicator"></div> vanIA Core</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            contentGrid.insertAdjacentHTML('beforeend', widgetsHtml);
+
+            setInterval(() => {
+                const cpu = Math.floor(Math.random() * (55 - 30) + 30);
+                const ram = Math.floor(Math.random() * (85 - 75) + 75);
+                const cpuBar = document.getElementById('cpu-bar');
+                if(cpuBar) {
+                    cpuBar.style.width = cpu + '%';
+                    document.getElementById('cpu-val').innerText = cpu + '%';
+                    document.getElementById('ram-bar').style.width = ram + '%';
+                    document.getElementById('ram-val').innerText = ram + '%';
+                }
+            }, 3000);
+
+            const msgs = ["> [NET] Solicitud verificada.", "> [SEC] Sin amenazas detectadas.", "> [AI] Contexto procesado.", "> [SYS] Telemetría OK."];
+            setInterval(() => {
+                const term = document.getElementById('term-box');
+                if(term) {
+                    if(term.childElementCount > 4) term.removeChild(term.children[1]);
+                    const newLine = document.createElement('div');
+                    newLine.className = 'log-line';
+                    newLine.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+                    term.appendChild(newLine);
+                }
+            }, 3500);
+        }
+
+        // ==========================================
+        // 4. PAPELERA Y DESAPARICIÓN DE REGISTROS
+        // ==========================================
+        if (!document.body.classList.contains('dashboard')) {
+            let trashItems = JSON.parse(localStorage.getItem('vantti_trash') || '[]');
+            const trashedNames = trashItems.map(item => item.name);
+
+            const mainTables = document.querySelectorAll('#content-main table tbody tr');
+            mainTables.forEach((row) => {
+                const firstLink = row.querySelector('th a') || row.querySelector('td a');
+                if(firstLink) {
+                    const rowName = firstLink.textContent.trim();
+                    if(trashedNames.includes(rowName)) {
+                        row.style.display = 'none';
+                    } else {
+                        const actionsTd = document.createElement('td');
+                        actionsTd.className = 'field-acciones';
+                        const trashBtn = document.createElement('a');
+                        trashBtn.href = '#';
+                        trashBtn.className = 'trash-btn-list';
+                        trashBtn.innerHTML = '🗑️ Borrar';
+                        trashBtn.onclick = function(e) {
+                            e.preventDefault();
+                            if(confirm(`¿Mover "${rowName}" a la papelera? (Se retendrá por 10 días)`)) {
+                                row.style.display = 'none';
+                                trashItems.push({ name: rowName, daysLeft: 10, dateAdded: new Date().getTime() });
+                                localStorage.setItem('vantti_trash', JSON.stringify(trashItems));
+                            }
+                        };
+                        row.appendChild(actionsTd);
+                        actionsTd.appendChild(trashBtn);
+                    }
+                }
+            });
+
+            const navSidebar = document.querySelector('#nav-sidebar');
+            if (navSidebar) {
+                const trashLinkBox = document.createElement('div');
+                trashLinkBox.className = 'recycle-box';
+                trashLinkBox.style.marginTop = '20px';
+                trashLinkBox.innerHTML = `
+                    <table style="background: linear-gradient(135deg, rgba(255, 0, 85, 0.05), rgba(0,0,0,0.8)); border: 1px solid rgba(255, 0, 85, 0.3); border-radius: 16px; padding: 15px; width: 100%; box-shadow: 0 5px 15px rgba(255,0,85,0.1); border-collapse: separate;">
+                        <caption style="background: transparent !important; color:var(--alert-red) !important; border-bottom: 2px solid var(--alert-red) !important; padding-bottom:5px; display:block; text-align: center; text-shadow: 0 0 10px rgba(255,0,85,0.5) !important;">♻️ RECICLAJE</caption>
+                        <tr style="background:transparent; border:none;">
+                            <th style="text-align:center; padding-top: 15px;">
+                                <a href="#" onclick="openRecycle()" style="color:var(--text-main); font-weight:bold; text-decoration:none; display:flex; justify-content:center; align-items:center; gap:8px;">
+                                    <span style="color:var(--alert-red); font-size:1.2rem;">🗑️</span> Ver Papelera
+                                </a>
+                            </th>
+                        </tr>
+                    </table>
+                `;
+                navSidebar.appendChild(trashLinkBox);
+            }
+        }
+    });
+</script>
+{% endblock %}

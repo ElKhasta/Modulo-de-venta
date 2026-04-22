@@ -28,11 +28,13 @@ else:
 INSTALLED_APPS=[
     'django.contrib.admin',
     'django.contrib.auth',
-    'django.contrib.sessions',
     'django.contrib.contenttypes',
+    'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api',
+    
+    # Agrega esto:
+    'core',
 ]
 MIDDLEWARE=[
     'django.middleware.security.SecurityMiddleware',
@@ -42,11 +44,14 @@ MIDDLEWARE=[
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # AQUÍ AGREGAS TU GUARDIÁN:
+    'core.middleware.SecuritySentinelMiddleware',
 ]
-TEMPLATES=[
+TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Esto le dice: "Busca en la carpeta templates de la raíz del proyecto"
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -58,6 +63,7 @@ TEMPLATES=[
         },
     },
 ]
+   
 LANGUAGE_CODE = 'es-mx'
 TIME_ZONE = 'America/Mexico_City'
 USE_TZ = True
