@@ -1,8 +1,10 @@
 from django.contrib import admin
-from django.urls import path
-from .views import catalogo_VANTTI # Cambiamos buscador por catalogo
+from django.urls import include, path
+
+from .views import catalogo_VANTTI
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', catalogo_VANTTI, name='catalogo'), # La página principal ahora es el catálogo
+    path("admin/", admin.site.urls),
+    path("api/", include("api.urls")),
+    path("", catalogo_VANTTI, name="catalogo"),
 ]

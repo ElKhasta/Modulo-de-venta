@@ -1,31 +1,54 @@
 from django.contrib import admin
-from .models import Cliente, Producto, Venta, DetalleVenta
+
+from .models import Cliente, DetalleVenta, MovimientoInventario, Producto, Venta
+
 
 class DetalleVentaInline(admin.TabularInline):
     model = DetalleVenta
     extra = 1
-    readonly_fields=('subtotal',)
+    readonly_fields = ("subtotal",)
+
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'email', 'telefono', 'rfc')
-    search_fields = ('nombre','rfc')
+    list_display = ("nombre", "email", "telefono", "rfc")
+    search_fields = ("nombre", "rfc", "telefono")
+
+
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display=('nombre','precio','stock',)
-    search_fields = ('nombre',)
-    list_filter = ('precio',)
+    list_display = ("nombre", "codigo_barras", "precio", "stock")
+    search_fields = ("nombre", "codigo_barras")
+    list_filter = ("stock",)
+
 
 @admin.register(Venta)
 class VentaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'cliente', 'fecha', 'total')
-    search_fields = ('fecha','cliente__nombre',)
-    list_filter = ('cliente',)
+    list_display = ("id", "cliente", "fecha", "total")
+    search_fields = ("id", "cliente__nombre")
+    list_filter = ("cliente", "fecha")
     inlines = [DetalleVentaInline]
 
 
 @admin.register(DetalleVenta)
 class DetalleVentaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'venta', 'producto', 'cantidad', 'precio_historico')
-    search_fields = ('venta__id', 'producto__nombre')
-    list_filter = ('venta', 'producto')
+    list_display = ("id", "venta", "producto", "cantidad", "precio_historico", "subtotal")
+    search_fields = ("venta__id", "producto__nombre")
+    list_filter = ("venta", "producto")
+
+
+@admin.register(MovimientoInventario)
+class MovimientoInventarioAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "producto",
+        "tipo_movimiento",
+        "cantidad",
+        "stock_anterior",
+        "stock_nuevo",
+        "usuario",
+        "origen",
+        "created_at",
+    )
+    search_fields = ("producto__nombre", "producto__codigo_barras", "nota")
+    list_filter = ("tipo_movimiento", "origen", "created_at")
