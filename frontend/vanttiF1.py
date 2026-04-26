@@ -283,7 +283,7 @@ def main(page: ft.Page):
         idx = e.control.selected_index
         view_ventas.visible = (idx == 0)
         view_stock.visible = (idx == 1)
-        view_usuarios.visible = (idx == 3) # El índice de "Admin" en tu Rail
+        view_usuarios.visible = (idx == 3) 
         
         if idx == 1: cargar_tabla_stock()
         if idx == 3: cargar_tabla_usuarios()

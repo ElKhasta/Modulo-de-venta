@@ -25,7 +25,8 @@ def login_view(request):
         return Response({
             "message": "Login exitoso",
             "user": user.username,
-            "id": user.id
+            "id": user.id,
+            "is_staff": user.is_staff
         }, status=status.HTTP_200_OK)
     else:
         return Response({"error": "Usuario o contraseña incorrectos"}, status=status.HTTP_401_UNAUTHORIZED)

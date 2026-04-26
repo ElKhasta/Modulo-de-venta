@@ -25,7 +25,6 @@ router.register(r'ventas', VentaViewSet)
 router.register(r'usuarios', UserViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # AGREGAMOS ESTA LÍNEA (El orden importa, ponla antes o después del router)
     path('api/login/', login_view, name='login'),
     path('api/', include(router.urls)),
     

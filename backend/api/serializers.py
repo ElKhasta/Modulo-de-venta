@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from supabase_auth import User
-from .models import Producto, Venta, DetalleVenta, Cliente # <--- Añadimos Cliente
+from .models import Producto, Venta, DetalleVenta, Cliente
 
 class ClienteSerializer(serializers.ModelSerializer):
     class Meta:
