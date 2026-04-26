@@ -86,19 +86,15 @@ def main(page: ft.Page):
             ret, frame = cap.read()
             if not ret: break
             
-            # Corregir efecto espejo (Voltear horizontalmente)
+            # Corregir efecto espejo (Voltear imagen para que sea intuitivo)
             frame = cv2.flip(frame, 1)
 
             for barcode in decode(frame):
                 codigo = barcode.data.decode('utf-8')
                 cap.release()
                 cv2.destroyAllWindows()
-                time.sleep(0.2)
-                page.window.always_on_top = True
-                page.update()
-                page.window.always_on_top = False
-                page.update()
-                
+                # Pequeña pausa para permitir que el SO procese el cierre de la ventana
+                time.sleep(0.4)
                 procesar_codigo_escaneado(codigo)
                 return
             cv2.imshow(window_name, frame)
@@ -120,6 +116,13 @@ def main(page: ft.Page):
             else:
                 mostrar_snack(f"Código {codigo} no registrado. Iniciando alta...")
                 abrir_crear_producto(codigo)
+        
+        # TRUCO DE FOCO: Forzamos a que la ventana de Flet pase al frente
+        # Esto soluciona que el diálogo no aparezca hasta hacer clic.
+        page.window.always_on_top = True
+        page.update()
+        time.sleep(0.1)
+        page.window.always_on_top = False
         page.update()
 
     def abrir_camara(e, destino="venta"):
