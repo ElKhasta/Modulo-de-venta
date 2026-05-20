@@ -1,4 +1,4 @@
-﻿import flet as ft
+import flet as ft
 
 from app.components.ui import app_card, empty_state, metric_card, money, page_header, show_message, status_pill
 from app.services.api import AuthenticationError, ApiError
@@ -54,7 +54,7 @@ def build_dashboard_view(page: ft.Page, state):
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
-                padding=ft.padding.symmetric(horizontal=14, vertical=12),
+                padding=ft.Padding.symmetric(horizontal=14, vertical=12),
                 border_radius=14,
                 bgcolor=ft.Colors.with_opacity(0.05, NAVY),
             )

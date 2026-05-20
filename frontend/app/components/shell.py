@@ -1,4 +1,4 @@
-﻿import flet as ft
+import flet as ft
 
 from app.components.ui import app_card
 from app.theme import BACKGROUND, BORDER, GOLD, NAVY, SIDEBAR_TEXT, SURFACE, TEXT, TEXT_SOFT
@@ -53,7 +53,7 @@ def build_shell_view(page: ft.Page, state, route: str, content):
                 spacing=8,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            padding=ft.padding.only(bottom=16),
+            padding=ft.Padding.only(bottom=16),
         ),
     )
 
@@ -90,9 +90,9 @@ def build_shell_view(page: ft.Page, state, route: str, content):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         ),
-        padding=ft.padding.symmetric(horizontal=28, vertical=20),
+        padding=ft.Padding.symmetric(horizontal=28, vertical=20),
         bgcolor=SURFACE,
-        border=ft.border.only(bottom=ft.BorderSide(1, BORDER)),
+        border=ft.Border.only(bottom=ft.BorderSide(1, BORDER)),
     )
 
     content_wrapper = ft.Container(

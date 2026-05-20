@@ -1,4 +1,4 @@
-﻿import flet as ft
+import flet as ft
 
 from app.theme import BACKGROUND, BORDER, CARD_SHADOW, ERROR, GOLD, INFO, NAVY, SUCCESS, SURFACE, TEXT, TEXT_SOFT, WARNING
 
@@ -72,7 +72,7 @@ def app_card(content, *, expand: bool = False, padding: int = 20, height=None):
         content=content,
         bgcolor=SURFACE,
         border_radius=20,
-        border=ft.border.all(1, BORDER),
+        border=ft.Border.all(1, BORDER),
         padding=padding,
         expand=expand,
         height=height,
@@ -96,7 +96,7 @@ def primary_button(text: str, on_click, *, icon=None, expand: bool = False, disa
         style=ft.ButtonStyle(
             bgcolor={ft.ControlState.DEFAULT: GOLD},
             color={ft.ControlState.DEFAULT: NAVY},
-            padding=ft.padding.symmetric(horizontal=18, vertical=16),
+            padding=ft.Padding.symmetric(horizontal=18, vertical=16),
             shape=ft.RoundedRectangleBorder(radius=12),
         ),
         expand=expand,
@@ -115,7 +115,7 @@ def secondary_button(text: str, on_click, *, icon=None, expand: bool = False):
         style=ft.ButtonStyle(
             side={ft.ControlState.DEFAULT: ft.BorderSide(1, BORDER)},
             color={ft.ControlState.DEFAULT: TEXT},
-            padding=ft.padding.symmetric(horizontal=18, vertical=16),
+            padding=ft.Padding.symmetric(horizontal=18, vertical=16),
             shape=ft.RoundedRectangleBorder(radius=12),
         ),
         expand=expand,
@@ -146,9 +146,9 @@ def status_pill(label: str, tone: str = "info"):
     return ft.Container(
         content=ft.Text(label, size=11, color=color, weight=ft.FontWeight.W_600),
         bgcolor=ft.Colors.with_opacity(0.08, color),
-        border=ft.border.all(1, ft.Colors.with_opacity(0.25, color)),
+        border=ft.Border.all(1, ft.Colors.with_opacity(0.25, color)),
         border_radius=999,
-        padding=ft.padding.symmetric(horizontal=10, vertical=6),
+        padding=ft.Padding.symmetric(horizontal=10, vertical=6),
     )
 
 
