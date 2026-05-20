@@ -1,11 +1,8 @@
-from decimal import Decimal
+﻿from decimal import Decimal
 
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-
-User = get_user_model()
 
 
 class Producto(models.Model):
@@ -88,37 +85,3 @@ class DetalleVenta(models.Model):
         if not self.cantidad or not self.precio_historico:
             return Decimal("0.00")
         return self.cantidad * self.precio_historico
-
-
-class MovimientoInventario(models.Model):
-    TIPO_INCREMENTAR = "incrementar"
-    TIPO_DISMINUIR = "disminuir"
-    TIPO_ALTA_PRODUCTO = "alta_producto"
-    TIPO_BAJA_LOGICA = "baja_logica"
-    TIPOS_MOVIMIENTO = [
-        (TIPO_INCREMENTAR, "Incrementar"),
-        (TIPO_DISMINUIR, "Disminuir"),
-        (TIPO_ALTA_PRODUCTO, "Alta de producto"),
-        (TIPO_BAJA_LOGICA, "Baja lógica"),
-    ]
-
-    producto = models.ForeignKey(
-        Producto,
-        on_delete=models.PROTECT,
-        related_name="movimientos_inventario",
-    )
-    tipo_movimiento = models.CharField(max_length=20, choices=TIPOS_MOVIMIENTO)
-    cantidad = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    stock_anterior = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    stock_nuevo = models.PositiveIntegerField(validators=[MinValueValidator(0)])
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    origen = models.CharField(max_length=50, blank=True, default="")
-    codigo_barras_leido = models.CharField(max_length=50, blank=True, default="")
-    nota = models.TextField(blank=True, default="")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.producto.nombre} | {self.tipo_movimiento} | {self.cantidad}"

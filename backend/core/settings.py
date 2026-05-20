@@ -5,13 +5,11 @@ import os
 from dotenv import load_dotenv
 
 
-SETTINGS_DIR = Path(__file__).resolve().parent
-BASE_DIR = SETTINGS_DIR.parent
-PROJECT_ROOT = BASE_DIR.parent
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BACKEND_DIR.parent
 
 load_dotenv(PROJECT_ROOT / ".env")
-load_dotenv(BASE_DIR / ".env")
-load_dotenv(SETTINGS_DIR / ".env")
+load_dotenv(BACKEND_DIR / ".env")
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -23,16 +21,12 @@ def env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw_value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or os.getenv(
-    "SECRET_KEY",
-    "django-insecure-clave-temporal-de-ventas-2026-xyz",
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-vantti-pos-change-this-secret-key-2026",
 )
-DEBUG = env_bool("DJANGO_DEBUG", env_bool("DEBUG", True))
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", os.getenv("ALLOWED_HOSTS", "*"))
-
-ROOT_URLCONF = "core.urls"
-WSGI_APPLICATION = "core.wsgi.application"
-ASGI_APPLICATION = "core.asgi.application"
+DEBUG = env_bool("DJANGO_DEBUG", True)
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
 
 INSTALLED_APPS = [
     "corsheaders",
@@ -45,7 +39,6 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "api",
-    "core",
 ]
 
 MIDDLEWARE = [
@@ -57,13 +50,14 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middleware.SecuritySentinelMiddleware",
 ]
+
+ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -73,40 +67,51 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
             ],
         },
-    },
+    }
 ]
 
+WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = "core.asgi.application"
+
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
-if DB_ENGINE in {"postgres", "postgresql"}:
+if DB_ENGINE == "postgresql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "modulo_ventas"),
+            "NAME": os.getenv("DB_NAME", "modulo_venta"),
             "USER": os.getenv("DB_USER", "postgres"),
             "PASSWORD": os.getenv("DB_PASSWORD", "postgres"),
-            "HOST": os.getenv("DB_HOST", "localhost"),
+            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
 else:
-    sqlite_name = os.getenv("SQLITE_NAME", "db.sqlite3")
-    sqlite_path = Path(sqlite_name)
-    if not sqlite_path.is_absolute():
-        sqlite_path = BASE_DIR / sqlite_name
-
+    database_name = os.getenv("DB_NAME", "db.sqlite3")
+    database_path = Path(database_name)
+    if not database_path.is_absolute():
+        database_path = BACKEND_DIR / database_name
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": sqlite_path,
+            "NAME": database_path,
         }
     }
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 LANGUAGE_CODE = "es-mx"
 TIME_ZONE = "America/Mexico_City"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "/static/"
+STATIC_URL = "static/"
+STATIC_ROOT = BACKEND_DIR / "staticfiles"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -127,6 +132,3 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL", DEBUG)
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
-
-INVENTORY_REALTIME_ENABLED = env_bool("INVENTORY_REALTIME_ENABLED", False)
-INVENTORY_REALTIME_BACKEND = os.getenv("INVENTORY_REALTIME_BACKEND", "noop").strip().lower()

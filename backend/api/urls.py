@@ -1,4 +1,4 @@
-from django.urls import include, path
+﻿from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -6,8 +6,7 @@ from .views import (
     AuthRefreshView,
     ClienteViewSet,
     CurrentUserView,
-    InventoryMovementView,
-    InventoryResolveScanView,
+    DashboardSummaryView,
     ProductoViewSet,
     VentaViewSet,
 )
@@ -19,13 +18,10 @@ router.register("clientes", ClienteViewSet, basename="cliente")
 router.register("ventas", VentaViewSet, basename="venta")
 
 
-app_name = "api"
 urlpatterns = [
     path("auth/login/", AuthLoginView.as_view(), name="auth-login"),
     path("auth/refresh/", AuthRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", CurrentUserView.as_view(), name="auth-me"),
-    path("login/", AuthLoginView.as_view(), name="compat-login"),
-    path("inventario/resolve-scan/", InventoryResolveScanView.as_view(), name="inventario-resolve-scan"),
-    path("inventario/movimientos/", InventoryMovementView.as_view(), name="inventario-movimientos"),
+    path("dashboard/summary/", DashboardSummaryView.as_view(), name="dashboard-summary"),
     path("", include(router.urls)),
 ]

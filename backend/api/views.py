@@ -1,4 +1,8 @@
+﻿from decimal import Decimal
+
+from django.db.models import Sum
 from django.db.models.deletion import ProtectedError
+from django.db.models.functions import Coalesce
 from rest_framework import status, viewsets
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import AllowAny
@@ -6,23 +10,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .models import Cliente, MovimientoInventario, Producto, Venta
+from .models import Cliente, Producto, Venta
 from .serializers import (
     ClienteSerializer,
     CurrentUserSerializer,
-    InventoryMovementRequestSerializer,
+    DashboardProductSerializer,
+    DashboardSaleSerializer,
     LoginSerializer,
     ProductoSerializer,
-    ScanResolveSerializer,
     VentaReadSerializer,
     VentaWriteSerializer,
 )
-from .services import (
-    apply_inventory_movement,
-    create_product_with_stock_tracking,
-    delete_sale,
-    update_product_with_stock_tracking,
-)
+from .services import delete_sale
 
 
 class AuthLoginView(TokenObtainPairView):
@@ -39,99 +38,34 @@ class CurrentUserView(APIView):
         return Response(CurrentUserSerializer(request.user).data)
 
 
-def _inventory_actions_for_product(producto: Producto) -> list[str]:
-    actions = [MovimientoInventario.TIPO_INCREMENTAR, MovimientoInventario.TIPO_BAJA_LOGICA]
-    if producto.stock > 0:
-        actions.insert(1, MovimientoInventario.TIPO_DISMINUIR)
-    return actions
-
-
-def _product_basic_payload(producto: Producto) -> dict:
-    return {
-        "id": producto.id,
-        "codigo_barras": producto.codigo_barras,
-        "nombre": producto.nombre,
-        "precio": str(producto.precio),
-        "stock": producto.stock,
-    }
-
-
-class InventoryResolveScanView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = ScanResolveSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        codigo_barras = serializer.validated_data["codigo_barras"]
-
-        producto = Producto.objects.filter(codigo_barras=codigo_barras).first()
-        if not producto:
-            return Response(
-                {
-                    "existe": False,
-                    "producto": None,
-                    "stock_actual": None,
-                    "acciones_permitidas": [MovimientoInventario.TIPO_ALTA_PRODUCTO],
-                }
-            )
-
-        return Response(
-            {
-                "existe": True,
-                "producto": _product_basic_payload(producto),
-                "stock_actual": producto.stock,
-                "acciones_permitidas": _inventory_actions_for_product(producto),
-            }
-        )
-
-
-class InventoryMovementView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = InventoryMovementRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        codigo_barras = serializer.validated_data["codigo_barras"]
-        producto = Producto.objects.filter(codigo_barras=codigo_barras).first()
-        if not producto:
-            return Response(
-                {
-                    "detail": "Producto no encontrado para el codigo de barras proporcionado.",
-                    "existe": False,
-                    "acciones_permitidas": [MovimientoInventario.TIPO_ALTA_PRODUCTO],
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        usuario = request.user if request.user.is_authenticated else None
-        producto_actualizado, movimiento = apply_inventory_movement(
-            product_id=producto.id,
-            tipo_movimiento=serializer.validated_data["tipo"],
-            cantidad=serializer.validated_data["cantidad"],
-            usuario=usuario,
-            origen=serializer.validated_data.get("origen") or "api.inventario.movimientos",
-            codigo_barras_leido=codigo_barras,
-            nota=serializer.validated_data.get("nota", ""),
-        )
-
-        return Response(
-            {
-                "producto": _product_basic_payload(producto_actualizado),
-                "stock_anterior": movimiento.stock_anterior,
-                "stock_nuevo": movimiento.stock_nuevo,
-                "movimiento": {
-                    "id": movimiento.id,
-                    "tipo_movimiento": movimiento.tipo_movimiento,
-                    "cantidad": movimiento.cantidad,
-                    "origen": movimiento.origen,
-                    "codigo_barras_leido": movimiento.codigo_barras_leido,
-                    "nota": movimiento.nota,
-                },
-                "timestamp": movimiento.created_at,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+class DashboardSummaryView(APIView):
+    def get(self, request):
+        sales_queryset = Venta.objects.select_related("cliente")
+        summary = {
+            "total_productos": Producto.objects.count(),
+            "total_clientes": Cliente.objects.count(),
+            "total_ventas": sales_queryset.count(),
+            "monto_total": sales_queryset.aggregate(
+                total=Coalesce(Sum("total"), Decimal("0.00"))
+            )["total"],
+            "ventas_recientes": DashboardSaleSerializer(
+                [
+                    {
+                        "id": venta.id,
+                        "fecha": venta.fecha,
+                        "total": venta.total,
+                        "cliente": venta.cliente.nombre if venta.cliente else "Publico general",
+                    }
+                    for venta in sales_queryset[:5]
+                ],
+                many=True,
+            ).data,
+            "productos_bajo_stock": DashboardProductSerializer(
+                list(Producto.objects.filter(stock__lte=5).values("id", "nombre", "stock")[:5]),
+                many=True,
+            ).data,
+        }
+        return Response(summary)
 
 
 class ProductoViewSet(viewsets.ModelViewSet):
@@ -140,38 +74,6 @@ class ProductoViewSet(viewsets.ModelViewSet):
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ["nombre", "codigo_barras"]
     ordering_fields = ["nombre", "precio", "stock"]
-
-    def _request_user(self, request):
-        if request.user.is_authenticated:
-            return request.user
-        return None
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        producto = create_product_with_stock_tracking(
-            validated_data=dict(serializer.validated_data),
-            usuario=self._request_user(request),
-            origen="api.productos.create",
-        )
-        return Response(self.get_serializer(producto).data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        producto = update_product_with_stock_tracking(
-            producto=instance,
-            validated_data=dict(serializer.validated_data),
-            usuario=self._request_user(request),
-            origen="api.productos.update",
-        )
-        return Response(self.get_serializer(producto).data)
-
-    def partial_update(self, request, *args, **kwargs):
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -217,5 +119,5 @@ class VentaViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         venta = self.get_object()
-        delete_sale(venta, usuario=request.user if request.user.is_authenticated else None)
+        delete_sale(venta)
         return Response(status=status.HTTP_204_NO_CONTENT)

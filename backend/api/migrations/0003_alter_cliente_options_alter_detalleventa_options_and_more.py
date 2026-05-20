@@ -8,66 +8,49 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("api", "0002_cliente_rfc"),
+        ('api', '0002_cliente_rfc'),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name="cliente",
-            options={"ordering": ["nombre"]},
+            name='cliente',
+            options={'ordering': ['nombre']},
         ),
         migrations.AlterModelOptions(
-            name="detalleventa",
-            options={"ordering": ["id"]},
+            name='detalleventa',
+            options={'ordering': ['id']},
         ),
         migrations.AlterModelOptions(
-            name="producto",
-            options={"ordering": ["nombre"]},
+            name='producto',
+            options={'ordering': ['nombre']},
         ),
         migrations.AlterModelOptions(
-            name="venta",
-            options={"ordering": ["-fecha"]},
+            name='venta',
+            options={'ordering': ['-fecha']},
         ),
         migrations.AlterField(
-            model_name="detalleventa",
-            name="cantidad",
-            field=models.PositiveIntegerField(
-                validators=[django.core.validators.MinValueValidator(1)]
-            ),
+            model_name='detalleventa',
+            name='cantidad',
+            field=models.PositiveIntegerField(validators=[django.core.validators.MinValueValidator(1)]),
         ),
         migrations.AlterField(
-            model_name="detalleventa",
-            name="precio_historico",
-            field=models.DecimalField(
-                decimal_places=2,
-                max_digits=10,
-                validators=[django.core.validators.MinValueValidator(Decimal("0.01"))],
-            ),
+            model_name='detalleventa',
+            name='precio_historico',
+            field=models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))]),
         ),
         migrations.AlterField(
-            model_name="producto",
-            name="precio",
-            field=models.DecimalField(
-                decimal_places=2,
-                max_digits=10,
-                validators=[django.core.validators.MinValueValidator(Decimal("0.01"))],
-            ),
+            model_name='producto',
+            name='precio',
+            field=models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))]),
         ),
         migrations.AlterField(
-            model_name="producto",
-            name="stock",
-            field=models.PositiveIntegerField(
-                default=0, validators=[django.core.validators.MinValueValidator(0)]
-            ),
+            model_name='producto',
+            name='stock',
+            field=models.PositiveIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0)]),
         ),
         migrations.AlterField(
-            model_name="venta",
-            name="total",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=0,
-                max_digits=12,
-                validators=[django.core.validators.MinValueValidator(Decimal("0.00"))],
-            ),
+            model_name='venta',
+            name='total',
+            field=models.DecimalField(decimal_places=2, default=0, max_digits=12, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))]),
         ),
     ]

@@ -1,6 +1,6 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 
-from .models import Cliente, DetalleVenta, MovimientoInventario, Producto, Venta
+from .models import Cliente, DetalleVenta, Producto, Venta
 
 
 class DetalleVentaInline(admin.TabularInline):
@@ -35,20 +35,3 @@ class DetalleVentaAdmin(admin.ModelAdmin):
     list_display = ("id", "venta", "producto", "cantidad", "precio_historico", "subtotal")
     search_fields = ("venta__id", "producto__nombre")
     list_filter = ("venta", "producto")
-
-
-@admin.register(MovimientoInventario)
-class MovimientoInventarioAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "producto",
-        "tipo_movimiento",
-        "cantidad",
-        "stock_anterior",
-        "stock_nuevo",
-        "usuario",
-        "origen",
-        "created_at",
-    )
-    search_fields = ("producto__nombre", "producto__codigo_barras", "nota")
-    list_filter = ("tipo_movimiento", "origen", "created_at")
