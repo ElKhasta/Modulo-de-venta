@@ -26,6 +26,9 @@ def build_productos_view(page: ft.Page, state):
     camara_activa = False
     cap = None
     
+    def focus_scanner(*_):
+        page.run_task(scan_input.focus)
+    
     # Controles de Búsqueda y Filtros
     search_input = field("Buscar por nombre o codigo", expand=True)
     
@@ -156,7 +159,7 @@ def build_productos_view(page: ft.Page, state):
                 load_data()
                 
                 # Devolver el foco al scanner HID
-                scan_input.focus()
+                focus_scanner()
             except AuthenticationError as exc:
                 close_dialog(page, dialog)
                 handle_auth_error(exc)
@@ -169,11 +172,11 @@ def build_productos_view(page: ft.Page, state):
             title=ft.Text("Editar producto" if product else "Nuevo producto"),
             content=ft.Container(width=420, content=ft.Column([nombre, codigo, precio, stock], spacing=14, tight=True)),
             actions=[
-                secondary_button("Cancelar", lambda e: [close_dialog(page, dialog), scan_input.focus()]),
+                secondary_button("Cancelar", lambda e: [close_dialog(page, dialog), focus_scanner()]),
                 primary_button("Guardar", save)
             ],
             actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: scan_input.focus()
+            on_dismiss=focus_scanner
         )
         open_dialog(page, dialog)
 
@@ -184,7 +187,7 @@ def build_productos_view(page: ft.Page, state):
                 show_message(page, "Producto eliminado correctamente.")
                 close_dialog(page, dialog)
                 load_data()
-                scan_input.focus()
+                focus_scanner()
             except AuthenticationError as exc:
                 close_dialog(page, dialog)
                 handle_auth_error(exc)
@@ -197,11 +200,11 @@ def build_productos_view(page: ft.Page, state):
             title=ft.Text("Eliminar producto"),
             content=ft.Text(f"Se eliminara '{product['nombre']}'. Esta accion no se puede deshacer."),
             actions=[
-                secondary_button("Cancelar", lambda e: [close_dialog(page, dialog), scan_input.focus()]),
+                secondary_button("Cancelar", lambda e: [close_dialog(page, dialog), focus_scanner()]),
                 primary_button("Eliminar", remove, icon=ft.Icons.DELETE_ROUNDED)
             ],
             actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: scan_input.focus()
+            on_dismiss=focus_scanner
         )
         open_dialog(page, dialog)
 
@@ -224,7 +227,7 @@ def build_productos_view(page: ft.Page, state):
             scan_input.value = ""
             scan_input.disabled = False
             scan_input.update()
-            scan_input.focus()
+            focus_scanner()
             return
 
         # 2. Consultar al backend (defensivo: maneja QR de fidelización y GS1 variable)
@@ -251,7 +254,7 @@ def build_productos_view(page: ft.Page, state):
         scan_input.value = ""
         scan_input.disabled = False
         scan_input.update()
-        scan_input.focus()
+        focus_scanner()
 
     def abrir_dialogo_vincular_celular(e):
         local_ip = get_local_ip()
@@ -314,10 +317,10 @@ def build_productos_view(page: ft.Page, state):
                 ], spacing=10, tight=True)
             ),
             actions=[
-                primary_button("Entendido", lambda e: [close_dialog(page, dialog), scan_input.focus()])
+                primary_button("Entendido", lambda e: [close_dialog(page, dialog), focus_scanner()])
             ],
             actions_alignment=ft.MainAxisAlignment.END,
-            on_dismiss=lambda e: scan_input.focus()
+            on_dismiss=focus_scanner
         )
         open_dialog(page, dialog)
 

@@ -19,20 +19,12 @@ def money(value) -> str:
 
 
 def show_message(page: ft.Page, message: str, *, error: bool = False) -> None:
-    snack_bar = getattr(page, "_vantti_snack_bar", None)
-    if snack_bar is None:
-        snack_bar = ft.SnackBar(
-            content=ft.Text(message, color=ft.Colors.WHITE),
-            bgcolor=ERROR if error else SUCCESS,
-            duration=3500,
-        )
-        page.overlay.append(snack_bar)
-        page._vantti_snack_bar = snack_bar
-    else:
-        snack_bar.content = ft.Text(message, color=ft.Colors.WHITE)
-        snack_bar.bgcolor = ERROR if error else SUCCESS
-        snack_bar.duration = 3500
-
+    snack_bar = ft.SnackBar(
+        content=ft.Text(message, color=ft.Colors.WHITE),
+        bgcolor=ERROR if error else SUCCESS,
+        duration=3000,
+    )
+    page.snack_bar = snack_bar
     snack_bar.open = True
     page.update()
 
