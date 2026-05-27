@@ -77,7 +77,7 @@ def download_cloudflared():
 def start_django():
     print("[Django] Iniciando servidor en puerto " + str(DJANGO_PORT) + "...")
     proc = subprocess.Popen(
-        [str(VENV_PYTHON), str(DJANGO_MANAGE), "runserver", "0.0.0.0:" + str(DJANGO_PORT)],
+        [str(VENV_PYTHON), "-u", str(DJANGO_MANAGE), "runserver", "0.0.0.0:" + str(DJANGO_PORT)],
         cwd=str(BASE_DIR),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
