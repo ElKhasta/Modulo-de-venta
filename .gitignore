@@ -1,4 +1,4 @@
-﻿# --- PYTHON (Back-end) ---
+# --- PYTHON (Back-end) ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -65,3 +65,9 @@ desktop.ini
 .DS_Store
 
 .packages/
+
+# --- CLOUDFLARE TUNNEL & TEMPORAL FILES ---
+cloudflared.exe
+.tunnel_url
+cloudflared.log
+

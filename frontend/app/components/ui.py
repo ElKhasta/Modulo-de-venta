@@ -87,12 +87,13 @@ def page_header(title: str, subtitle: str | None = None):
     return ft.Column(controls, spacing=4)
 
 
-def primary_button(text: str, on_click, *, icon=None, expand: bool = False, disabled: bool = False):
+def primary_button(text: str, on_click=None, *, icon=None, expand: bool = False, disabled: bool = False, url=None):
     return ft.FilledButton(
         text,
         icon=icon,
         on_click=on_click,
         disabled=disabled,
+        url=url,
         style=ft.ButtonStyle(
             bgcolor={ft.ControlState.DEFAULT: GOLD},
             color={ft.ControlState.DEFAULT: NAVY},
@@ -107,11 +108,12 @@ def set_button_label(button, text: str) -> None:
     button.content = text
 
 
-def secondary_button(text: str, on_click, *, icon=None, expand: bool = False):
+def secondary_button(text: str, on_click=None, *, icon=None, expand: bool = False, url=None):
     return ft.OutlinedButton(
         text,
         icon=icon,
         on_click=on_click,
+        url=url,
         style=ft.ButtonStyle(
             side={ft.ControlState.DEFAULT: ft.BorderSide(1, BORDER)},
             color={ft.ControlState.DEFAULT: TEXT},

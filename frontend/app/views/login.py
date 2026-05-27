@@ -1,4 +1,4 @@
-﻿import flet as ft
+import flet as ft
 
 from app.components.ui import app_card, field, primary_button, show_message
 from app.theme import BACKGROUND, GOLD, NAVY, TEXT, TEXT_SOFT, brand_gradient
@@ -86,11 +86,12 @@ def build_login_view(page: ft.Page, state):
         route="/login",
         bgcolor=BACKGROUND,
         padding=0,
+        scroll=ft.ScrollMode.AUTO,  # Habilitar deslizamiento con el dedo en celular si no cabe
         controls=[
             ft.Container(
                 expand=True,
                 alignment=ft.Alignment(0, 0),
-                padding=40,
+                padding=16 if page.width < 768 else 40,  # Padding responsivo más pequeño en celular
                 content=ft.Container(
                     width=1080,
                     content=ft.ResponsiveRow(

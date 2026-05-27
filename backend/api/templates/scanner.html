@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cámara Escáner - Vantti POS</title>
+    <!-- html5-qrcode library CDN -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #F4F6F8;
+            color: #1E293B;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Premium Brand Header */
+        header {
+            background: linear-gradient(135deg, #00264D 0%, #003366 100%);
+            color: #FFFFFF;
+            width: 100%;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 51, 102, 0.15);
+            border-bottom: 3px solid #C9A227;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #C9A227;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        header p {
+            font-size: 13px;
+            color: #E6D7A6;
+            font-weight: 500;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: center;
+            padding: 20px 16px;
+        }
+
+        /* Glassmorphism Premium Card */
+        .card {
+            width: 100%;
+            background-color: #FFFFFF;
+            border: 1px solid #D5DDE6;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Camera Scanner Viewport Container */
+        #reader {
+            width: 100%;
+            background-color: #00264D;
+            border: 2px solid #D5DDE6;
+            border-radius: 18px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Customize html5-qrcode buttons and controls to match premium brand */
+        #reader button {
+            background-color: #C9A227 !important;
+            color: #003366 !important;
+            border: none !important;
+            padding: 12px 24px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+            cursor: pointer !important;
+            margin: 12px 5px !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.2) !important;
+        }
+
+        #reader button:hover {
+            background-color: #E6D7A6 !important;
+            transform: translateY(-1px);
+        }
+
+        #reader button:active {
+            transform: scale(0.97);
+        }
+
+        #reader select {
+            background-color: #FFFFFF !important;
+            color: #1E293B !important;
+            border: 1px solid #D5DDE6 !important;
+            padding: 12px !important;
+            font-size: 14px !important;
+            border-radius: 10px !important;
+            margin: 10px 5px !important;
+            width: 90%;
+            outline: none;
+        }
+
+        /* Visual Guidance - Pulsing Laser Scanner Line */
+        .laser-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .laser-line {
+            position: absolute;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background-color: #FF3B30;
+            box-shadow: 0 0 12px #FF3B30, 0 0 4px #FF3B30;
+            animation: scanning 2.5s infinite ease-in-out;
+            display: none; /* Displayed when camera starts */
+        }
+
+        @keyframes scanning {
+            0% { top: 30px; }
+            50% { top: 220px; }
+            100% { top: 30px; }
+        }
+
+        /* Status & Connection Details */
+        .status-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            background-color: rgba(46, 125, 50, 0.1);
+            color: #2E7D32;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background-color: currentColor;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .scanned-list {
+            margin-top: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .scanned-item {
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .scanned-item .code {
+            font-family: "Courier New", monospace;
+            font-weight: 700;
+            color: #003366;
+            font-size: 14px;
+        }
+
+        .scanned-item .time {
+            font-size: 11px;
+            color: #5B6573;
+            font-weight: 500;
+        }
+
+        /* Success screen flash */
+        .flash-success {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(46, 125, 50, 0.25);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 9999;
+            transition: opacity 0.12s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        footer {
+            padding: 20px;
+            font-size: 12px;
+            color: #5B6573;
+            text-align: center;
+            font-weight: 500;
+            width: 100%;
+            border-top: 1px solid #D5DDE6;
+            background-color: #FFFFFF;
+        }
+
+        /* Info Alert Box for Camera Troubleshooting */
+        .troubleshoot-box {
+            font-size: 12px;
+            color: #5B6573;
+            background-color: #F0F4F8;
+            border-left: 4px solid #003366;
+            padding: 12px 14px;
+            border-radius: 8px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="flash-success" id="flash"></div>
+
+    <header>
+        <h1>Vantti POS</h1>
+        <p>Cámara Escáner de Alta Velocidad</p>
+    </header>
+
+    <div class="main-container">
+        <div class="card">
+            <!-- Camera Viewfinder wrapper -->
+            <div style="position: relative; width: 100%;">
+                <div id="reader"></div>
+                <div class="laser-container">
+                    <div class="laser-line" id="laser"></div>
+                </div>
+            </div>
+
+            <div class="status-container">
+                <div class="status-row">
+                    <span>Estado del Escáner:</span>
+                    <div class="status-badge" id="net-badge">
+                        <span class="badge-dot"></span>
+                        <span id="net-status">Inicializando...</span>
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px solid #E2E8F0; margin: 4px 0;"></div>
+
+                <span style="font-size: 12px; color: #5B6573; font-weight: 700;">Últimos Escaneos:</span>
+                <div class="scanned-list" id="scanned-list">
+                    <em style="font-size: 12px; color: #5B6573; font-style: normal; display: block; text-align: center; padding: 10px 0;" id="empty-notice">Sostén un código frente a la cámara.</em>
+                </div>
+            </div>
+
+            <div class="troubleshoot-box">
+                <strong>¿No detecta el código de barras?</strong> Asegúrate de que haya buena iluminación y mantén el código a una distancia moderada (15-25 cm) hasta que la cámara logre enfocar las líneas negras de forma nítida.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Vantti POS &copy; 2026. Todos los derechos reservados.
+    </footer>
+
+    <!-- Audio element for sound feedback -->
+    <audio id="beep-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav" preload="auto"></audio>
+
+    <script>
+        const beepSound = document.getElementById("beep-sound");
+        const flashScreen = document.getElementById("flash");
+        const scannedList = document.getElementById("scanned-list");
+        const netBadge = document.getElementById("net-badge");
+        const netStatus = document.getElementById("net-status");
+        const laserLine = document.getElementById("laser");
+        const emptyNotice = document.getElementById("empty-notice");
+
+        function playBeep() {
+            try {
+                beepSound.currentTime = 0;
+                beepSound.play();
+            } catch (e) {
+                console.error("Audio playback blocked", e);
+            }
+        }
+
+        function triggerFlash() {
+            flashScreen.style.opacity = "1";
+            setTimeout(() => {
+                flashScreen.style.opacity = "0";
+            }, 120);
+        }
+
+        function addScannedItem(code) {
+            if (emptyNotice) {
+                emptyNotice.style.display = "none";
+            }
+
+            const item = document.createElement("div");
+            item.className = "scanned-item";
+            
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            item.innerHTML = `
+                <span class="code">${code}</span>
+                <span class="time">${timeStr}</span>
+            `;
+            
+            scannedList.insertBefore(item, scannedList.firstChild);
+            scannedList.scrollTop = 0;
+
+            // Keep only latest 6 items
+            while (scannedList.children.length > 6) {
+                scannedList.removeChild(scannedList.lastChild);
+            }
+        }
+
+        function transmitCode(code) {
+            netStatus.textContent = "Transmitiendo...";
+            netBadge.style.color = "#003366";
+            netBadge.style.backgroundColor = "rgba(0, 51, 102, 0.1)";
+
+            fetch("/api/productos/escanear_remoto/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ codigo: code })
+            })
+            .then(res => {
+                if (res.ok) {
+                    netStatus.textContent = "Transmitido";
+                    netBadge.style.color = "#2E7D32";
+                    netBadge.style.backgroundColor = "rgba(46, 125, 50, 0.1)";
+                    playBeep();
+                    triggerFlash();
+                    addScannedItem(code);
+                } else {
+                    throw new Error("API error");
+                }
+            })
+            .catch(err => {
+                console.error("Transmission failed", err);
+                netStatus.textContent = "Error de Enlace";
+                netBadge.style.color = "#B3261E";
+                netBadge.style.backgroundColor = "rgba(179, 38, 30, 0.1)";
+            });
+        }
+
+        // Initialize HTML5 QR/Barcode Scanner
+        let isProcessing = false;
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isProcessing) return;
+            
+            isProcessing = true;
+            transmitCode(decodedText);
+            
+            // 1.8 seconds cooldown to prevent rapid double-scanning of same code
+            setTimeout(() => {
+                isProcessing = false;
+            }, 1800);
+        }
+
+        // Setup laser scan line when camera is active
+        function checkCameraState() {
+            setTimeout(() => {
+                const videoEl = document.querySelector("#reader video");
+                if (videoEl) {
+                    laserLine.style.display = "block";
+                    netStatus.textContent = "Cámara Activa";
+                    netBadge.style.color = "#2E7D32";
+                    netBadge.style.backgroundColor = "rgba(46, 125, 50, 0.1)";
+                } else {
+                    laserLine.style.display = "none";
+                    netStatus.textContent = "Listo para Iniciar";
+                    netBadge.style.color = "#0F766E";
+                    netBadge.style.backgroundColor = "rgba(15, 118, 110, 0.1)";
+                }
+            }, 800);
+        }
+
+        // Wait for user interaction to listen on camera button clicks inside html5-qrcode
+        document.addEventListener("click", (e) => {
+            if (e.target && e.target.tagName === "BUTTON") {
+                checkCameraState();
+            }
+        });
+
+        // Initialize scanner with all EAN, UPC, and Code 128 formats enabled
+        // and using hardware-accelerated shape detection if supported
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { 
+                fps: 30, // Higher frame rate for scanning speed
+                qrbox: function(width, height) {
+                    // Wide, responsive rectangular overlay perfect for 1D product barcodes
+                    const sizeW = Math.min(width, 420) * 0.85;
+                    const sizeH = sizeW * 0.4;
+                    return { width: sizeW, height: sizeH };
+                },
+                rememberLastUsedCamera: true,
+                supportedScanTypes: [
+                    Html5QrcodeScanType.SCAN_TYPE_CAMERA
+                ],
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_93,
+                    Html5QrcodeSupportedFormats.ITF,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ],
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true
+                },
+                aspectRatio: 1.7777777778
+            }
+        );
+        
+        html5QrcodeScanner.render(onScanSuccess);
+        
+        // Initial state check
+        checkCameraState();
+
+        // Preload sound on first touch to bypass browser audio autostart block
+        document.addEventListener("click", () => {
+            beepSound.load();
+        }, { once: true });
+    </script>
+</body>
+</html>

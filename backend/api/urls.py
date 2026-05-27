@@ -1,4 +1,4 @@
-﻿from django.urls import include, path
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -9,6 +9,7 @@ from .views import (
     DashboardSummaryView,
     ProductoViewSet,
     VentaViewSet,
+    html_scanner,
 )
 
 
@@ -23,5 +24,6 @@ urlpatterns = [
     path("auth/refresh/", AuthRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", CurrentUserView.as_view(), name="auth-me"),
     path("dashboard/summary/", DashboardSummaryView.as_view(), name="dashboard-summary"),
+    path("scanner/", html_scanner, name="html-scanner"),
     path("", include(router.urls)),
 ]
